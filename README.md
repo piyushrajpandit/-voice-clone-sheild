@@ -7,7 +7,7 @@ sdk: docker
 app_port: 7860
 pinned: false
 license: mit
-short_description: Real-time AI voice deepfake detector & family safe-word challenge.
+short_description: Real-time AI voice clone detector & safe-word.
 ---
 
 # 🛡️ Voice Clone Shield
