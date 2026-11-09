@@ -1,0 +1,1068 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Clone Shield | Real-time Deepfake Voice & Video Interceptor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #060913;
+            --bg-card: rgba(15, 23, 42, 0.75);
+            --bg-card-border: rgba(56, 189, 248, 0.15);
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent-cyan: #06b6d4;
+            --accent-blue: #3b82f6;
+            --status-green: #10b981;
+            --status-red: #f43f5e;
+            --status-red-glow: rgba(244, 63, 94, 0.4);
+            --status-green-glow: rgba(16, 185, 129, 0.4);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            background-image: 
+                radial-gradient(circle at 15% 20%, rgba(6, 182, 212, 0.08) 0%, transparent 40%),
+                radial-gradient(circle at 85% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+            font-family: 'Outfit', sans-serif;
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .header {
+            text-align: center;
+            max-width: 850px;
+            margin-bottom: 24px;
+        }
+
+        .shield-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(6, 182, 212, 0.1);
+            border: 1px solid rgba(6, 182, 212, 0.3);
+            border-radius: 9999px;
+            padding: 6px 16px;
+            font-size: 0.85rem;
+            color: var(--accent-cyan);
+            font-weight: 600;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--status-green);
+            box-shadow: 0 0 10px var(--status-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.4; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+            line-height: 1.5;
+        }
+
+        /* Mode Switcher Tabs */
+        .mode-tabs {
+            display: flex;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 4px;
+            gap: 6px;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 450px;
+        }
+
+        .mode-tab {
+            flex: 1;
+            padding: 10px 14px;
+            border-radius: 8px;
+            border: none;
+            background: transparent;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .mode-tab.active {
+            background: var(--accent-blue);
+            color: white;
+            box-shadow: 0 2px 10px rgba(59, 130, 246, 0.4);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            max-width: 1100px;
+            width: 100%;
+        }
+
+        @media (max-width: 900px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--bg-card-border);
+            border-radius: 16px;
+            padding: 24px;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        .card-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .preset-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .btn-preset {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 14px 18px;
+            color: #f1f5f9;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            text-align: left;
+        }
+
+        .btn-preset:hover {
+            background: rgba(51, 65, 85, 0.8);
+            border-color: rgba(56, 189, 248, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        .tag {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+
+        .tag-real {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .tag-fake {
+            background: rgba(244, 63, 94, 0.15);
+            color: #fb7185;
+            border: 1px solid rgba(244, 63, 94, 0.3);
+        }
+
+        .upload-zone {
+            border: 2px dashed rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            padding: 22px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 16px;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--accent-cyan);
+            background: rgba(6, 182, 212, 0.04);
+        }
+
+        .record-controls {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-action {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: none;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-mic {
+            background: #2563eb;
+            color: white;
+        }
+
+        .btn-mic:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-mic.recording {
+            background: #dc2626;
+            animation: pulse-red 1.2s infinite;
+        }
+
+        /* Video Call HUD Box */
+        .video-box-container {
+            display: none;
+            position: relative;
+            background: #020617;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            margin-bottom: 16px;
+        }
+
+        .video-box-container.active {
+            display: block;
+        }
+
+        video {
+            width: 100%;
+            height: 240px;
+            object-fit: cover;
+            display: block;
+            border-radius: 12px;
+            background: #000;
+        }
+
+        .video-overlay-hud {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            right: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            pointer-events: none;
+        }
+
+        .hud-status-badge {
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(6, 182, 212, 0.4);
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--accent-cyan);
+            backdrop-filter: blur(8px);
+        }
+
+        .face-target-box {
+            position: absolute;
+            top: 20%;
+            left: 30%;
+            width: 40%;
+            height: 60%;
+            border: 2px dashed rgba(6, 182, 212, 0.6);
+            border-radius: 8px;
+            pointer-events: none;
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.2) inset;
+        }
+
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+        }
+
+        /* Verdict Card */
+        .verdict-box {
+            text-align: center;
+            padding: 24px 16px;
+            border-radius: 14px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s ease;
+        }
+
+        .verdict-box.state-authentic {
+            background: radial-gradient(circle at center, rgba(16, 185, 129, 0.15) 0%, rgba(15, 23, 42, 0.6) 100%);
+            border-color: var(--status-green);
+            box-shadow: 0 0 30px var(--status-green-glow);
+        }
+
+        .verdict-box.state-deepfake {
+            background: radial-gradient(circle at center, rgba(244, 63, 94, 0.2) 0%, rgba(15, 23, 42, 0.6) 100%);
+            border-color: var(--status-red);
+            box-shadow: 0 0 30px var(--status-red-glow);
+        }
+
+        .verdict-status {
+            font-size: 1.7rem;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            margin-bottom: 6px;
+        }
+
+        .verdict-confidence {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.05rem;
+            color: var(--text-secondary);
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .metric-item {
+            background: rgba(30, 41, 59, 0.5);
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            text-align: center;
+        }
+
+        .metric-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            margin-top: 4px;
+        }
+
+        .metric-label {
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+        }
+
+        /* Spectrogram Canvas */
+        .spectrogram-container {
+            margin-top: 16px;
+            background: #040711;
+            border-radius: 10px;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        canvas {
+            width: 100%;
+            height: 80px;
+            border-radius: 6px;
+            display: block;
+        }
+
+        /* Safe Word Challenge Section */
+        .safeword-banner {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(244, 63, 94, 0.1);
+            border: 1px solid var(--status-red);
+            border-radius: 12px;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .safeword-banner.show {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .safeword-input-row {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .safeword-input {
+            flex: 1;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            padding: 10px 14px;
+            color: white;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+        }
+
+        .btn-verify {
+            background: var(--status-red);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 18px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        .btn-verify:hover {
+            background: #e11d48;
+        }
+
+        .safeword-result {
+            margin-top: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+
+        audio {
+            width: 100%;
+            margin-top: 14px;
+            border-radius: 8px;
+            filter: invert(0.85) hue-rotate(180deg);
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="shield-badge">
+            <span class="pulse-dot"></span>
+            Wav2Vec2 Neural Audio Sentinel Active
+        </div>
+        <h1>Voice Clone Shield</h1>
+        <p class="subtitle">Real-time deepfake voice & video call detector with automated Family Safe-Word challenge protocol.</p>
+    </div>
+
+    <!-- Mode Selector -->
+    <div class="mode-tabs">
+        <button class="mode-tab active" id="tab-audio" onclick="switchMode('audio')">
+            <span>🎙️</span> Audio Feed Mode
+        </button>
+        <button class="mode-tab" id="tab-video" onclick="switchMode('video')">
+            <span>📹</span> Live Video Call Intercept
+        </button>
+    </div>
+
+    <div class="dashboard-grid">
+        <!-- Input Audio / Video Panel -->
+        <div class="card">
+            <div class="card-title">
+                <span id="panel-title">Audio Feed Input</span>
+                <span id="panel-sub" style="font-size: 0.8rem; color: var(--text-secondary);">16kHz Audio Stream</span>
+            </div>
+
+            <!-- AUDIO MODE VIEW -->
+            <div id="audio-mode-view">
+                <p style="font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 12px;">Quick Test Scenarios (1-Click Run):</p>
+                <div class="preset-buttons">
+                    <button class="btn-preset real" id="btn-sample-real" onclick="testPreset('sample_real_human.wav')">
+                        <div>
+                            <div style="font-weight: 700;">Authentic Human Speech</div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary);">Natural voice cadence with biological acoustics</div>
+                        </div>
+                        <span class="tag tag-real">Human</span>
+                    </button>
+
+                    <button class="btn-preset fake" id="btn-sample-fake" onclick="testPreset('sample_ai_clone.wav')">
+                        <div>
+                            <div style="font-weight: 700;">AI Cloned Scam Call</div>
+                            <div style="font-size: 0.8rem; color: var(--text-secondary);">Emergency extortion bait synthesized with neural TTS</div>
+                        </div>
+                        <span class="tag tag-fake">AI Clone</span>
+                    </button>
+                </div>
+
+                <div class="upload-zone" onclick="document.getElementById('file-input').click()">
+                    <div style="font-size: 1.8rem; margin-bottom: 4px;">📂</div>
+                    <div style="font-weight: 600;">Click to upload audio or video file</div>
+                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;">WAV, MP3, MP4, WebM</div>
+                    <input type="file" id="file-input" accept="audio/*,video/*" style="display: none;" onchange="handleFileUpload(event)">
+                </div>
+
+                <div class="record-controls">
+                    <button class="btn-action btn-mic" id="btn-record" onclick="toggleAudioRecording()">
+                        <span id="mic-icon">🎙️</span>
+                        <span id="mic-text">Record Voice Live</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- VIDEO MODE VIEW -->
+            <div id="video-mode-view" style="display: none;">
+                <div class="video-box-container active">
+                    <video id="live-video" autoplay playsinline muted></video>
+                    <div class="video-overlay-hud">
+                        <div class="hud-status-badge">
+                            <span class="pulse-dot" style="display:inline-block; margin-right:4px;"></span>
+                            <span id="video-hud-text">CAM STANDBY</span>
+                        </div>
+                        <div class="hud-status-badge" style="color:#f59e0b;">
+                            FACIAL TRACK: LOCKED
+                        </div>
+                    </div>
+                    <div class="face-target-box"></div>
+                </div>
+
+                <div class="record-controls">
+                    <button class="btn-action" style="background:#0f766e; color:white;" id="btn-cam-toggle" onclick="toggleCameraStream()">
+                        <span>📷</span> Enable Camera
+                    </button>
+                    <button class="btn-action btn-mic" id="btn-record-video" onclick="toggleVideoRecording()" disabled>
+                        <span id="rec-video-icon">⏺️</span>
+                        <span id="rec-video-text">Record Video Call</span>
+                    </button>
+                </div>
+            </div>
+
+            <audio id="audio-player" controls style="display: none;"></audio>
+        </div>
+
+        <!-- Analysis & Verdict Panel -->
+        <div class="card">
+            <div class="card-title">
+                <span>Forensic Classification</span>
+                <span id="status-pill" style="font-size: 0.8rem; color: var(--text-secondary);">Ready</span>
+            </div>
+
+            <div class="verdict-box" id="verdict-card">
+                <div style="font-size: 2.2rem; margin-bottom: 4px;" id="verdict-icon">🛡️</div>
+                <div class="verdict-status" id="verdict-text">Awaiting Audio / Video</div>
+                <div class="verdict-confidence" id="verdict-conf">Select a sample or record live stream</div>
+            </div>
+
+            <div class="metrics-grid">
+                <div class="metric-item">
+                    <div class="metric-label">Spoof Risk</div>
+                    <div class="metric-value" id="threat-score">--</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Inference Latency</div>
+                    <div class="metric-value" id="latency-val">--</div>
+                </div>
+                <div class="metric-item">
+                    <div class="metric-label">Duration</div>
+                    <div class="metric-value" id="duration-val">--</div>
+                </div>
+            </div>
+
+            <div class="spectrogram-container">
+                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 6px; display: flex; justify-content: space-between;">
+                    <span>ACOUSTIC SPECTRAL MATRIX</span>
+                    <span id="spec-status">Idle</span>
+                </div>
+                <canvas id="specCanvas"></canvas>
+            </div>
+
+            <!-- Emergency Safe-Word Banner -->
+            <div class="safeword-banner" id="safeword-banner">
+                <div style="display: flex; align-items: center; gap: 8px; font-weight: 800; color: var(--status-red); font-size: 1.05rem;">
+                    <span>⚠️</span> EMERGENCY PROTOCOL: SUSPECTED CLONE
+                </div>
+                <p style="font-size: 0.85rem; color: #cbd5e1; margin-top: 6px;">
+                    Caller failed voice authenticity. Automated family lockdown engaged. Verify identity with the pre-shared family safe-word:
+                </p>
+                <div class="safeword-input-row">
+                    <input type="text" class="safeword-input" id="safeword-input" placeholder="Enter Safe-Word (Hint: SUPERNOVA-42)">
+                    <button class="btn-verify" onclick="verifySafeWord()">Verify Word</button>
+                </div>
+                <div class="safeword-result" id="safeword-result"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentMode = 'audio';
+        let mediaStream = null;
+        let mediaRecorder = null;
+        let recordedChunks = [];
+        const canvas = document.getElementById('specCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function switchMode(mode) {
+            currentMode = mode;
+            document.getElementById('tab-audio').classList.toggle('active', mode === 'audio');
+            document.getElementById('tab-video').classList.toggle('active', mode === 'video');
+            document.getElementById('audio-mode-view').style.display = mode === 'audio' ? 'block' : 'none';
+            document.getElementById('video-mode-view').style.display = mode === 'video' ? 'block' : 'none';
+            document.getElementById('panel-title').innerText = mode === 'audio' ? 'Audio Feed Input' : 'Video Call Intercept';
+            document.getElementById('panel-sub').innerText = mode === 'audio' ? '16kHz Audio Stream' : 'Live Camera + Mic Stream';
+        }
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth - 20;
+            canvas.height = 80;
+            drawIdleSpec();
+        }
+        window.addEventListener('resize', resizeCanvas);
+        setTimeout(resizeCanvas, 100);
+
+        function drawIdleSpec() {
+            ctx.fillStyle = "#040711";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.strokeStyle = "rgba(6, 182, 212, 0.2)";
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height / 2);
+            for (let x = 0; x < canvas.width; x += 10) {
+                ctx.lineTo(x, canvas.height / 2 + Math.sin(x * 0.05) * 4);
+            }
+            ctx.stroke();
+        }
+
+        function drawSpectrogram(matrix) {
+            if (!matrix || matrix.length === 0) return;
+            const w = canvas.width;
+            const h = canvas.height;
+            ctx.fillStyle = "#040711";
+            ctx.fillRect(0, 0, w, h);
+
+            const cols = matrix.length;
+            const colWidth = w / cols;
+            const rows = matrix[0].length;
+            const rowHeight = h / rows;
+
+            for (let c = 0; c < cols; c++) {
+                for (let r = 0; r < rows; r++) {
+                    const intensity = Math.min(1.0, matrix[c][r] * 2.0);
+                    const red = Math.floor(255 * intensity);
+                    const green = Math.floor(200 * (1 - intensity) * intensity * 2);
+                    const blue = Math.floor(255 * (1 - intensity));
+                    ctx.fillStyle = `rgb(${red}, ${green}, ${blue})`;
+                    ctx.fillRect(c * colWidth, h - (r + 1) * rowHeight, colWidth + 0.5, rowHeight + 0.5);
+                }
+            }
+        }
+
+        /* In-browser WAV encoder: Extracts and resamples any audio/video input to 16kHz mono WAV */
+        async function convertBlobToWav16k(blob) {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+            const arrayBuffer = await blob.arrayBuffer();
+            const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+            
+            const numChannels = 1;
+            const sampleRate = 16000;
+            const format = 1; // PCM
+            const bitDepth = 16;
+            
+            const channelData = audioBuffer.getChannelData(0);
+            const bytesPerSample = bitDepth / 8;
+            const blockAlign = numChannels * bytesPerSample;
+            const byteRate = sampleRate * blockAlign;
+            const dataSize = channelData.length * bytesPerSample;
+            const buffer = new ArrayBuffer(44 + dataSize);
+            const view = new DataView(buffer);
+            
+            function writeString(offset, string) {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            }
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + dataSize, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, format, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, byteRate, true);
+            view.setUint16(32, blockAlign, true);
+            view.setUint16(34, bitDepth, true);
+            writeString(36, 'data');
+            view.setUint32(40, dataSize, true);
+            
+            let offset = 44;
+            for (let i = 0; i < channelData.length; i++, offset += 2) {
+                let s = Math.max(-1, Math.min(1, channelData[i]));
+                view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+            }
+            
+            return new Blob([view], { type: 'audio/wav' });
+        }
+
+        async function testPreset(filename) {
+            const statusPill = document.getElementById('status-pill');
+            statusPill.innerHTML = '<span class="spinner"></span> Analyzing...';
+            
+            const player = document.getElementById('audio-player');
+            player.src = `/api/samples/${filename}`;
+            player.style.display = 'block';
+            player.play().catch(() => {});
+
+            try {
+                const response = await fetch(`/api/samples/${filename}`);
+                const blob = await response.blob();
+                analyzeAudioBlob(blob, filename);
+            } catch (err) {
+                alert("Error fetching sample: " + err);
+                statusPill.innerText = "Error";
+            }
+        }
+
+        async function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const statusPill = document.getElementById('status-pill');
+            statusPill.innerHTML = '<span class="spinner"></span> Decoding & Extracting Audio...';
+
+            try {
+                const wavBlob = await convertBlobToWav16k(file);
+                const player = document.getElementById('audio-player');
+                player.src = URL.createObjectURL(wavBlob);
+                player.style.display = 'block';
+                analyzeAudioBlob(wavBlob, file.name);
+            } catch (err) {
+                // If browser decode fails (e.g. standard wav), submit raw file
+                analyzeAudioBlob(file, file.name);
+            }
+        }
+
+        async function analyzeAudioBlob(blob, name) {
+            const statusPill = document.getElementById('status-pill');
+            statusPill.innerHTML = '<span class="spinner"></span> Scanning Wav2Vec2 Model...';
+            document.getElementById('spec-status').innerText = 'Computing Fourier Matrix...';
+
+            const formData = new FormData();
+            formData.append('file', blob, name || 'input.wav');
+
+            try {
+                const res = await fetch('/api/analyze', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await res.json();
+                renderResults(data);
+            } catch (e) {
+                alert("Inference error: " + e);
+                statusPill.innerText = "Failed";
+            }
+        }
+
+        function renderResults(data) {
+            const statusPill = document.getElementById('status-pill');
+            const card = document.getElementById('verdict-card');
+            const icon = document.getElementById('verdict-icon');
+            const text = document.getElementById('verdict-text');
+            const conf = document.getElementById('verdict-conf');
+            const threat = document.getElementById('threat-score');
+            const latency = document.getElementById('latency-val');
+            const duration = document.getElementById('duration-val');
+            const safewordBanner = document.getElementById('safeword-banner');
+
+            card.classList.remove('state-authentic', 'state-deepfake');
+
+            if (data.is_fake) {
+                card.classList.add('state-deepfake');
+                icon.innerText = "🚨";
+                text.innerText = "AI VOICE CLONE DETECTED";
+                text.style.color = "var(--status-red)";
+                conf.innerText = `Threat Confidence: ${data.confidence}% (Model: Wav2Vec2)`;
+                threat.innerText = `${data.threat_score}%`;
+                threat.style.color = "var(--status-red)";
+                safewordBanner.classList.add('show');
+            } else {
+                card.classList.add('state-authentic');
+                icon.innerText = "✅";
+                text.innerText = "AUTHENTIC HUMAN VOICE";
+                text.style.color = "var(--status-green)";
+                conf.innerText = `Authenticity Confidence: ${data.confidence}%`;
+                threat.innerText = `${data.threat_score}%`;
+                threat.style.color = "var(--status-green)";
+                safewordBanner.classList.remove('show');
+            }
+
+            latency.innerText = `${data.latency_ms}ms`;
+            duration.innerText = `${data.duration}s`;
+            statusPill.innerText = "Analysis Complete";
+            document.getElementById('spec-status').innerText = 'Spectrogram Rendered';
+
+            if (data.spectrogram_preview) {
+                drawSpectrogram(data.spectrogram_preview);
+            }
+        }
+
+        async function verifySafeWord() {
+            const val = document.getElementById('safeword-input').value;
+            const resElem = document.getElementById('safeword-result');
+            
+            const formData = new FormData();
+            formData.append('answer', val);
+
+            const res = await fetch('/api/verify-safeword', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+
+            if (data.verified) {
+                resElem.innerHTML = `<span style="color: var(--status-green);">🛡️ ${data.message}</span>`;
+            } else {
+                resElem.innerHTML = `<span style="color: var(--status-red);">❌ ${data.message}</span>`;
+            }
+        }
+
+        /* STUDIO-GRADE DIRECT 16kHz PCM RECORDING */
+        let pcmAudioCtx = null;
+        let pcmProcessor = null;
+        let pcmSource = null;
+        let pcmSamplesBuffer = [];
+        let recordInterval = null;
+        let recordSeconds = 0;
+
+        function encodePcmWav(samples, sampleRate = 16000) {
+            const buffer = new ArrayBuffer(44 + samples.length * 2);
+            const view = new DataView(buffer);
+            
+            function writeString(offset, str) {
+                for (let i = 0; i < str.length; i++) {
+                    view.setUint8(offset + i, str.charCodeAt(i));
+                }
+            }
+            
+            writeString(0, 'RIFF');
+            view.setUint32(4, 36 + samples.length * 2, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); // PCM
+            view.setUint16(22, 1, true); // Mono
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true);
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+            writeString(36, 'data');
+            view.setUint32(40, samples.length * 2, true);
+            
+            let offset = 44;
+            for (let i = 0; i < samples.length; i++, offset += 2) {
+                let s = Math.max(-1, Math.min(1, samples[i]));
+                view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+            }
+            
+            return new Blob([view], { type: 'audio/wav' });
+        }
+
+        async function startPcmCapture(stream) {
+            pcmAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+            if (pcmAudioCtx.state === 'suspended') {
+                await pcmAudioCtx.resume();
+            }
+            pcmSource = pcmAudioCtx.createMediaStreamSource(stream);
+            pcmProcessor = pcmAudioCtx.createScriptProcessor(4096, 1, 1);
+            pcmSamplesBuffer = [];
+
+            pcmProcessor.onaudioprocess = (e) => {
+                const channelData = e.inputBuffer.getChannelData(0);
+                pcmSamplesBuffer.push(new Float32Array(channelData));
+            };
+
+            pcmSource.connect(pcmProcessor);
+            pcmProcessor.connect(pcmAudioCtx.destination);
+        }
+
+        async function stopPcmCapture() {
+            if (pcmProcessor) {
+                pcmProcessor.disconnect();
+                pcmProcessor = null;
+            }
+            if (pcmSource) {
+                pcmSource.disconnect();
+                pcmSource = null;
+            }
+            if (pcmAudioCtx) {
+                pcmAudioCtx.close();
+                pcmAudioCtx = null;
+            }
+
+            let totalLen = pcmSamplesBuffer.reduce((acc, c) => acc + c.length, 0);
+            let fullPcm = new Float32Array(totalLen);
+            let offset = 0;
+            for (let chunk of pcmSamplesBuffer) {
+                fullPcm.set(chunk, offset);
+                offset += chunk.length;
+            }
+            return encodePcmWav(fullPcm, 16000);
+        }
+
+        /* LIVE CAMERA & VIDEO CALL INTERCEPT */
+        async function toggleCameraStream() {
+            const videoElem = document.getElementById('live-video');
+            const btnCam = document.getElementById('btn-cam-toggle');
+            const btnRec = document.getElementById('btn-record-video');
+            const hudText = document.getElementById('video-hud-text');
+
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(t => t.stop());
+                mediaStream = null;
+                videoElem.srcObject = null;
+                btnCam.innerHTML = '<span>📷</span> Enable Camera';
+                btnRec.disabled = true;
+                hudText.innerText = 'CAM STANDBY';
+            } else {
+                try {
+                    mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                    videoElem.srcObject = mediaStream;
+                    btnCam.innerHTML = '<span>🚫</span> Disable Camera';
+                    btnRec.disabled = false;
+                    hudText.innerText = 'ACTIVE INTERCEPT';
+                } catch (err) {
+                    alert('Camera/Microphone permission denied: ' + err);
+                }
+            }
+        }
+
+        let isVideoRecording = false;
+
+        async function toggleVideoRecording() {
+            const btn = document.getElementById('btn-record-video');
+            const icon = document.getElementById('rec-video-icon');
+            const text = document.getElementById('rec-video-text');
+
+            if (isVideoRecording) {
+                isVideoRecording = false;
+                btn.classList.remove('recording');
+                icon.innerText = '⏺️';
+                text.innerText = 'Record Video Call';
+                
+                const statusPill = document.getElementById('status-pill');
+                statusPill.innerHTML = '<span class="spinner"></span> Extracting Clean PCM Audio...';
+
+                const cleanWavBlob = await stopPcmCapture();
+                const player = document.getElementById('audio-player');
+                player.src = URL.createObjectURL(cleanWavBlob);
+                player.style.display = 'block';
+
+                analyzeAudioBlob(cleanWavBlob, 'live_video_call.wav');
+            } else {
+                if (!mediaStream) return;
+                isVideoRecording = true;
+                await startPcmCapture(mediaStream);
+                btn.classList.add('recording');
+                icon.innerText = '⏹️';
+                text.innerText = 'Stop & Run Forensics';
+            }
+        }
+
+        /* LIVE AUDIO ONLY RECORDING */
+        let isAudioRecording = false;
+        let liveAudioStream = null;
+
+        async function toggleAudioRecording() {
+            const btn = document.getElementById('btn-record');
+            const micText = document.getElementById('mic-text');
+            const micIcon = document.getElementById('mic-icon');
+
+            if (isAudioRecording) {
+                isAudioRecording = false;
+                btn.classList.remove('recording');
+                micText.innerText = "Record Voice Live";
+                micIcon.innerText = "🎙️";
+
+                const cleanWavBlob = await stopPcmCapture();
+                if (liveAudioStream) {
+                    liveAudioStream.getTracks().forEach(t => t.stop());
+                    liveAudioStream = null;
+                }
+
+                const player = document.getElementById('audio-player');
+                player.src = URL.createObjectURL(cleanWavBlob);
+                player.style.display = 'block';
+
+                analyzeAudioBlob(cleanWavBlob, "live_mic.wav");
+            } else {
+                try {
+                    liveAudioStream = await navigator.mediaDevices.getUserMedia({ 
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: false, // Keep biological harmonics
+                            autoGainControl: true
+                        }
+                    });
+                    isAudioRecording = true;
+                    await startPcmCapture(liveAudioStream);
+
+                    btn.classList.add('recording');
+                    micText.innerText = "Stop Recording (Speak 3s+)";
+                    micIcon.innerText = "⏹️";
+                } catch (err) {
+                    alert("Microphone permission denied: " + err);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

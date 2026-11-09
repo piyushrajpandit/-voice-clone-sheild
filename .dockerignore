@@ -1,0 +1,7 @@
+venv/
+__pycache__/
+*.pyc
+debug_recordings/
+.git/
+.gitignore
+.DS_Store
