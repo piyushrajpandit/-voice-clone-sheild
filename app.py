@@ -9,6 +9,8 @@ from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from transformers import pipeline
+import librosa
+from faster_whisper import WhisperModel
 
 app = FastAPI(title="Voice Clone Shield")
 
@@ -26,6 +28,11 @@ MODEL_ID = "mo-thecreator/Deepfake-audio-detection"
 print(f"Loading robust detection pipeline ({MODEL_ID})...")
 classifier = pipeline("audio-classification", model=MODEL_ID)
 print("Detector loaded successfully!")
+
+# Load faster-whisper model (quantized for high-speed CPU / Apple Silicon inference)
+print("Loading faster-whisper model (tiny.en)...")
+whisper_model = WhisperModel("tiny.en", device="cpu", compute_type="int8")
+print("faster-whisper loaded successfully!")
 
 SAFE_WORD = "SUPERNOVA-42"
 os.makedirs("debug_recordings", exist_ok=True)
@@ -93,22 +100,94 @@ def process_audio_buffer(file_bytes):
 
     return data.astype(np.float32), sr
 
-def compute_spectrogram_preview(audio_data, sr=16000):
-    """Compute spectrogram frequencies and time slices for frontend visualization."""
-    from scipy.fft import rfft
-    frame_size = int(sr * 0.04) # 40ms
-    hop_size = int(sr * 0.02)
-    spec = []
-    
-    total_frames = max(1, (len(audio_data) - frame_size) // hop_size)
-    step = max(1, total_frames // 60)
-    
-    for i in range(0, len(audio_data) - frame_size, hop_size * step):
-        frame = audio_data[i:i + frame_size] * np.hanning(frame_size)
-        mags = np.abs(rfft(frame))[:32]
-        spec.append([round(float(m), 3) for m in mags])
+def extract_librosa_forensics(audio_data, sr=16000):
+    """
+    Extract multi-signal acoustic forensics using librosa:
+    - 13 Mel-Frequency Cepstral Coefficients (MFCCs)
+    - Spectral centroid (timbre brightness)
+    - Spectral flatness (synthesizer noise vs tone ratio)
+    - Spectral rolloff (high-frequency energy drop-off)
+    - Fundamental frequency (F0) & pitch modulation stability
+    - Mel-spectrogram normalized preview for visualization
+    """
+    try:
+        # MFCCs (13 coefficients)
+        mfccs = librosa.feature.mfcc(y=audio_data, sr=sr, n_mfcc=13)
+        mfcc_summary = [round(float(x), 2) for x in np.mean(mfccs, axis=1)]
+
+        # Spectral Centroid
+        centroid = librosa.feature.spectral_centroid(y=audio_data, sr=sr)
+        mean_centroid = round(float(np.mean(centroid)), 1)
+
+        # Spectral Flatness
+        flatness = librosa.feature.spectral_flatness(y=audio_data)
+        mean_flatness = round(float(np.mean(flatness)), 4)
+
+        # Spectral Rolloff (85% energy frequency)
+        rolloff = librosa.feature.spectral_rolloff(y=audio_data, sr=sr, roll_percent=0.85)
+        mean_rolloff = round(float(np.mean(rolloff)), 1)
+
+        # Fundamental Frequency F0 / Pitch estimation
+        pitches, magnitudes = librosa.piptrack(y=audio_data, sr=sr)
+        valid_pitches = pitches[magnitudes > np.median(magnitudes)]
+        mean_pitch = round(float(np.mean(valid_pitches)), 1) if len(valid_pitches) > 0 else 0.0
+        pitch_jitter = round(float(np.std(valid_pitches)), 1) if len(valid_pitches) > 0 else 0.0
+
+        # Mel Spectrogram Preview (32 frequency bands x up to 60 time slices)
+        mel_spec = librosa.feature.melspectrogram(y=audio_data, sr=sr, n_mels=32, hop_length=int(sr * 0.04))
+        mel_db = librosa.power_to_db(mel_spec, ref=np.max)
+        mel_norm = np.clip((mel_db + 80.0) / 80.0, 0.0, 1.0)
+        step = max(1, mel_norm.shape[1] // 60)
+        spec_preview = [[round(float(v), 3) for v in col] for col in mel_norm[:, ::step].T]
+
+        return {
+            "mfcc_summary": mfcc_summary,
+            "spectral_centroid_hz": mean_centroid,
+            "spectral_flatness": mean_flatness,
+            "spectral_rolloff_hz": mean_rolloff,
+            "pitch_f0_hz": mean_pitch,
+            "pitch_jitter_std": pitch_jitter,
+            "spectrogram_preview": spec_preview
+        }
+    except Exception as e:
+        print(f"Librosa extraction error: {e}")
+        return {
+            "mfcc_summary": [],
+            "spectral_centroid_hz": 0.0,
+            "spectral_flatness": 0.0,
+            "spectral_rolloff_hz": 0.0,
+            "pitch_f0_hz": 0.0,
+            "pitch_jitter_std": 0.0,
+            "spectrogram_preview": []
+        }
+
+def transcribe_audio_snippet(audio_data, sr=16000):
+    """Transcribe audio using faster-whisper and check for spoken emergency safewords."""
+    try:
+        segments, info = whisper_model.transcribe(audio_data, beam_size=1, language="en")
+        text = " ".join([seg.text.strip() for seg in segments]).strip()
         
-    return spec
+        # Check if the designated safe-word or keyword was spoken
+        cleaned_text = text.lower()
+        safeword_detected = (
+            "supernova" in cleaned_text or 
+            SAFE_WORD.lower() in cleaned_text
+        )
+        
+        return {
+            "transcript": text if text else "(No spoken words detected)",
+            "language": info.language,
+            "language_confidence": round(float(info.language_probability) * 100, 1),
+            "safeword_spoken": safeword_detected
+        }
+    except Exception as e:
+        print(f"Whisper transcription error: {e}")
+        return {
+            "transcript": "(Transcription unavailable)",
+            "language": "en",
+            "language_confidence": 0.0,
+            "safeword_spoken": False
+        }
 
 @app.post("/api/analyze")
 async def analyze_audio(file: UploadFile = File(...)):
@@ -128,11 +207,10 @@ async def analyze_audio(file: UploadFile = File(...)):
     duration = round(len(audio_data) / sr, 2)
     sample_slice = audio_data[:16000 * 10]
     
-    # Run through mo-thecreator model
+    # 1. Neural Spoof Classifier (mo-thecreator)
     predictions = classifier({"raw": sample_slice, "sampling_rate": 16000})
     print(f"Raw Model Predictions: {predictions}")
     
-    # mo-thecreator outputs labels 'real' and 'fake'
     scores = {p['label'].lower(): p['score'] for p in predictions}
     fake_score = scores.get('fake', 0.0)
     real_score = scores.get('real', 0.0)
@@ -140,11 +218,16 @@ async def analyze_audio(file: UploadFile = File(...)):
     is_fake = fake_score > 0.5
     confidence = fake_score if is_fake else real_score
     
+    # 2. Librosa Acoustic Forensics (MFCC, Centroid, Flatness, F0 Pitch)
+    forensics = extract_librosa_forensics(sample_slice, sr)
+    
+    # 3. faster-whisper Speech-to-Text & Spoken Safeword Intercept
+    speech = transcribe_audio_snippet(sample_slice, sr)
+    
     hf_cutoff = float(np.mean(np.abs(np.diff(sample_slice))))
-    spectrogram = compute_spectrogram_preview(sample_slice, sr)
     latency_ms = round((time.time() - start_time) * 1000)
 
-    print(f"Verdict: {'DEEPFAKE' if is_fake else 'AUTHENTIC'} | Confidence: {confidence*100:.1f}% | Duration: {duration}s")
+    print(f"Verdict: {'DEEPFAKE' if is_fake else 'AUTHENTIC'} | Conf: {confidence*100:.1f}% | Transcript: {speech['transcript']}")
 
     return {
         "status": "success",
@@ -154,12 +237,22 @@ async def analyze_audio(file: UploadFile = File(...)):
         "confidence": round(confidence * 100, 1),
         "duration": duration,
         "latency_ms": latency_ms,
+        "transcript": speech["transcript"],
+        "speech_analysis": speech,
+        "acoustic_forensics": {
+            "spectral_centroid_hz": forensics["spectral_centroid_hz"],
+            "spectral_flatness": forensics["spectral_flatness"],
+            "spectral_rolloff_hz": forensics["spectral_rolloff_hz"],
+            "pitch_f0_hz": forensics["pitch_f0_hz"],
+            "pitch_jitter_std": forensics["pitch_jitter_std"],
+            "mfcc_summary": forensics["mfcc_summary"]
+        },
         "acoustic_metrics": {
             "hf_jitter": round(hf_cutoff * 1000, 2),
             "sample_rate": sr,
             "samples_analyzed": len(sample_slice)
         },
-        "spectrogram_preview": spectrogram
+        "spectrogram_preview": forensics["spectrogram_preview"]
     }
 
 @app.post("/api/verify-safeword")

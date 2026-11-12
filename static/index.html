@@ -879,7 +879,38 @@
                 </div>
             </div>
 
-            <div class="spectrogram-container">
+            <!-- Speech-to-Text Transcript (faster-whisper) -->
+            <div style="margin-top:14px;background:rgba(2,6,23,0.7);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;">
+                <div style="font-size:0.75rem;color:var(--text-secondary);display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-weight:600;letter-spacing:0.5px;">
+                    <span>🎙️ LIVE TRANSCRIPT (faster-whisper)</span>
+                    <span id="safeword-badge" style="display:none;background:rgba(16,185,129,0.2);color:var(--status-green);padding:2px 8px;border-radius:12px;font-size:0.7rem;border:1px solid var(--status-green);font-weight:700;">SAFEWORD SPOKEN</span>
+                </div>
+                <div id="transcript-display" style="font-size:0.88rem;color:#f1f5f9;font-style:italic;min-height:22px;line-height:1.4;">
+                    Awaiting audio speech input...
+                </div>
+            </div>
+
+            <!-- Librosa Acoustic Forensics Strip -->
+            <div style="margin-top:12px;display:grid;grid-template-columns:repeat(4, 1fr);gap:8px;">
+                <div style="background:rgba(15,23,42,0.6);padding:8px 6px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);text-align:center;">
+                    <div style="color:var(--text-secondary);font-size:0.68rem;text-transform:uppercase;">Pitch (F0)</div>
+                    <div id="f0-val" style="color:var(--accent-cyan);font-weight:700;font-size:0.9rem;margin-top:2px;">--</div>
+                </div>
+                <div style="background:rgba(15,23,42,0.6);padding:8px 6px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);text-align:center;">
+                    <div style="color:var(--text-secondary);font-size:0.68rem;text-transform:uppercase;">Centroid</div>
+                    <div id="centroid-val" style="color:#a855f7;font-weight:700;font-size:0.9rem;margin-top:2px;">--</div>
+                </div>
+                <div style="background:rgba(15,23,42,0.6);padding:8px 6px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);text-align:center;">
+                    <div style="color:var(--text-secondary);font-size:0.68rem;text-transform:uppercase;">Flatness</div>
+                    <div id="flatness-val" style="color:#eab308;font-weight:700;font-size:0.9rem;margin-top:2px;">--</div>
+                </div>
+                <div style="background:rgba(15,23,42,0.6);padding:8px 6px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);text-align:center;">
+                    <div style="color:var(--text-secondary);font-size:0.68rem;text-transform:uppercase;">Rolloff</div>
+                    <div id="rolloff-val" style="color:#38bdf8;font-weight:700;font-size:0.9rem;margin-top:2px;">--</div>
+                </div>
+            </div>
+
+            <div class="spectrogram-container" style="margin-top:14px;">
                 <div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;">
                     <span>ACOUSTIC SPECTRAL MATRIX</span>
                     <span id="spec-status">Idle</span>
@@ -1234,7 +1265,33 @@
         document.getElementById('duration-val').innerText = `${data.duration}s`;
         document.getElementById('status-pill').innerText = "Analysis Complete";
         document.getElementById('spec-status').innerText = 'Spectrogram Rendered';
-        if (data.spectrogram_preview) drawSpectrogram(data.spectrogram_preview);
+
+        // Render faster-whisper transcript & safeword alert
+        const transcriptEl = document.getElementById('transcript-display');
+        const swBadge = document.getElementById('safeword-badge');
+        if (data.transcript) {
+            transcriptEl.innerText = `"${data.transcript}"`;
+        } else {
+            transcriptEl.innerText = "(No speech detected)";
+        }
+        if (data.speech_analysis && data.speech_analysis.safeword_spoken) {
+            swBadge.style.display = 'inline-block';
+        } else {
+            swBadge.style.display = 'none';
+        }
+
+        // Render Librosa acoustic forensics
+        if (data.acoustic_forensics) {
+            const af = data.acoustic_forensics;
+            document.getElementById('f0-val').innerText = af.pitch_f0_hz > 0 ? `${af.pitch_f0_hz}Hz` : 'Unvoiced';
+            document.getElementById('centroid-val').innerText = `${af.spectral_centroid_hz}Hz`;
+            document.getElementById('flatness-val').innerText = af.spectral_flatness;
+            document.getElementById('rolloff-val').innerText = `${af.spectral_rolloff_hz}Hz`;
+        }
+
+        if (data.spectrogram_preview && data.spectrogram_preview.length > 0) {
+            drawSpectrogram(data.spectrogram_preview);
+        }
     }
 
     async function testPreset(filename) {
