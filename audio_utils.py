@@ -79,7 +79,6 @@ def load_and_resample(
                 break
 
         trimmed = data[start_idx:end_idx]
-        # Keep trimmed version if it retains at least 0.4s of speech
         if len(trimmed) >= int(target_sr * 0.4):
             data = trimmed
 
@@ -107,7 +106,6 @@ def cut_segments(
     segment_samples = int(round(segment_duration * sr))
     hop_samples = int(round(hop_duration * sr))
 
-    # If the audio is shorter than the desired segment duration, return single segment
     if total_samples <= segment_samples:
         return [{
             "start": 0.0,
@@ -121,7 +119,6 @@ def cut_segments(
         end_sample = min(start_sample + segment_samples, total_samples)
         chunk = audio_array[start_sample:end_sample]
 
-        # Pad with zeros if chunk is at the tail and shorter than half a segment
         if len(chunk) < int(segment_samples * 0.5):
             break
 
@@ -143,6 +140,56 @@ def generate_spectrogram(
     output_path: str = "outputs/spectrogram.png"
 ) -> str:
     """
-    Stub: Will be fully implemented in Step 5.
+    Compute Mel-spectrogram with librosa and save a PNG image to output_path.
+    Highlights high-frequency vocoder cutoff regions for forensic analysis.
+
+    Returns:
+        The string path of the generated PNG file.
     """
-    raise NotImplementedError("Stub: generate_spectrogram will be implemented in Step 5.")
+    import matplotlib
+    matplotlib.use("Agg")  # Non-interactive backend
+    import matplotlib.pyplot as plt
+    import librosa
+    import librosa.display
+
+    # Ensure output directory exists
+    out_dir = os.path.dirname(output_path)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
+
+    # 1. Compute Mel-spectrogram (128 bands)
+    mel_spec = librosa.feature.melspectrogram(
+        y=audio_array,
+        sr=sr,
+        n_mels=128,
+        fmax=sr // 2,
+        hop_length=int(sr * 0.01),  # 10ms hop
+        n_fft=int(sr * 0.025)       # 25ms window
+    )
+    mel_db = librosa.power_to_db(mel_spec, ref=np.max)
+
+    # 2. Render plot
+    fig, ax = plt.subplots(figsize=(8, 3.5), dpi=100)
+    img = librosa.display.specshow(
+        mel_db,
+        x_axis="time",
+        y_axis="mel",
+        sr=sr,
+        fmax=sr // 2,
+        ax=ax,
+        cmap="magma"
+    )
+    fig.colorbar(img, ax=ax, format="%+2.0f dB")
+
+    # Add forensic annotation for high-frequency vocoder cutoff line
+    ax.axhline(y=8000, color="cyan", linestyle="--", linewidth=1.2, alpha=0.7, label="Nyquist Limit (8kHz)")
+    ax.set_title("Voice Clone Shield: Acoustic Mel-Spectrogram (16kHz)", fontsize=11, fontweight="bold")
+    ax.set_xlabel("Time (seconds)", fontsize=9)
+    ax.set_ylabel("Frequency (Hz)", fontsize=9)
+    ax.legend(loc="upper right", fontsize=8)
+
+    plt.tight_layout()
+    fig.savefig(output_path, dpi=120)
+    plt.close(fig)
+
+    return output_path
