@@ -1,7 +1,50 @@
-{
-  "urgency": [],
-  "otp_request": [],
-  "money_transfer": [],
-  "secrecy": [],
-  "authority_threat": []
+﻿{
+  "urgency": [
+    "immediately",
+    "within 30 minutes",
+    "right now",
+    "as soon as possible",
+    "today itself",
+    "जल्दी",
+    "तुरन्त",
+    "तुरंत"
+  ],
+  "otp_request": [
+    "otp",
+    "one time password",
+    "verification code",
+    "share your otp",
+    "ओटीपी",
+    "अटीपी",
+    "वेरिफिकेशन कोड"
+  ],
+  "money_transfer": [
+    "make the payment",
+    "transfer the amount",
+    "send money",
+    "unpaid bill",
+    "pay the fee",
+    "भुगतान",
+    "पैसे भेजें",
+    "रकम ट्रांसफर"
+  ],
+  "secrecy": [
+    "don't tell anyone",
+    "keep this confidential",
+    "don't share this with your family",
+    "this is between us",
+    "किसी को मत बताना",
+    "गुप्त रखें"
+  ],
+  "authority_threat": [
+    "account will be blocked",
+    "card will be blocked",
+    "police case",
+    "legal action",
+    "connection will be disconnected",
+    "खाता बंद",
+    "कार्ड ब्लॉक",
+    "पुलिस केस",
+    "कानूनी कार्रवाई"
+  ]
 }
