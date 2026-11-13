@@ -1,6 +1,7 @@
 """
 audio_utils.py - Audio processing utilities for Voice Clone Shield.
 Handles conversion to 16 kHz mono WAV, segment cutting, and spectrogram generation.
+Supports all common audio containers (WAV, MP3, MP4, M4A, WebM, OGG, AAC) via PyAV fallback.
 """
 from typing import List, Dict, Any, Tuple, Union
 import io
@@ -8,6 +9,24 @@ import os
 import numpy as np
 import soundfile as sf
 import scipy.signal
+
+def _decode_with_pyav(audio_bytes: bytes, target_sr: int = 16000) -> Tuple[np.ndarray, int]:
+    """Decode any audio container (MP4, M4A, WebM, AAC, etc.) using PyAV."""
+    import av
+    container = av.open(io.BytesIO(audio_bytes))
+    if not container.streams.audio:
+        raise ValueError("No audio stream found in input")
+    stream = container.streams.audio[0]
+    resampler = av.AudioResampler(format="flt", layout="mono", rate=target_sr)
+    frames_list = []
+    for frame in container.decode(stream):
+        for r_frame in resampler.resample(frame):
+            frames_list.append(r_frame.to_ndarray())
+    container.close()
+    if not frames_list:
+        raise ValueError("Could not decode any audio frames")
+    data = np.concatenate(frames_list, axis=1).squeeze()
+    return data.astype(np.float32), target_sr
 
 def load_and_resample(
     audio_input: Union[str, bytes],
@@ -21,20 +40,34 @@ def load_and_resample(
     Returns:
         Tuple of (audio_array: np.ndarray, sample_rate: int)
     """
+    data = None
+    sr = None
+
     # 1. Read audio data and sample rate
     if isinstance(audio_input, bytes):
+        # Attempt 1: Standard soundfile
         try:
             data, sr = sf.read(io.BytesIO(audio_input), dtype="float32")
         except Exception:
-            import wave
-            with wave.open(io.BytesIO(audio_input), 'rb') as wf:
-                sr = wf.getframerate()
-                frames = wf.readframes(wf.getnframes())
-                data = np.frombuffer(frames, dtype=np.int16).astype(np.float32) / 32768.0
+            # Attempt 2: PyAV (decodes MP4/AAC from Safari, WebM, etc.)
+            try:
+                data, sr = _decode_with_pyav(audio_input, target_sr=target_sr)
+            except Exception:
+                # Attempt 3: Standard wave
+                import wave
+                with wave.open(io.BytesIO(audio_input), 'rb') as wf:
+                    sr = wf.getframerate()
+                    frames = wf.readframes(wf.getnframes())
+                    data = np.frombuffer(frames, dtype=np.int16).astype(np.float32) / 32768.0
+
     elif isinstance(audio_input, str):
         if not os.path.exists(audio_input):
             raise FileNotFoundError(f"Audio file not found: {audio_input}")
-        data, sr = sf.read(audio_input, dtype="float32")
+        try:
+            data, sr = sf.read(audio_input, dtype="float32")
+        except Exception:
+            with open(audio_input, "rb") as f:
+                data, sr = _decode_with_pyav(f.read(), target_sr=target_sr)
     else:
         raise TypeError(f"audio_input must be a file path (str) or bytes, got {type(audio_input)}")
 
@@ -152,23 +185,20 @@ def generate_spectrogram(
     import librosa
     import librosa.display
 
-    # Ensure output directory exists
     out_dir = os.path.dirname(output_path)
     if out_dir:
         os.makedirs(out_dir, exist_ok=True)
 
-    # 1. Compute Mel-spectrogram (128 bands)
     mel_spec = librosa.feature.melspectrogram(
         y=audio_array,
         sr=sr,
         n_mels=128,
         fmax=sr // 2,
-        hop_length=int(sr * 0.01),  # 10ms hop
-        n_fft=int(sr * 0.025)       # 25ms window
+        hop_length=int(sr * 0.01),
+        n_fft=int(sr * 0.025)
     )
     mel_db = librosa.power_to_db(mel_spec, ref=np.max)
 
-    # 2. Render plot
     fig, ax = plt.subplots(figsize=(8, 3.5), dpi=100)
     img = librosa.display.specshow(
         mel_db,
@@ -181,7 +211,6 @@ def generate_spectrogram(
     )
     fig.colorbar(img, ax=ax, format="%+2.0f dB")
 
-    # Add forensic annotation for high-frequency vocoder cutoff line
     ax.axhline(y=8000, color="cyan", linestyle="--", linewidth=1.2, alpha=0.7, label="Nyquist Limit (8kHz)")
     ax.set_title("Voice Clone Shield: Acoustic Mel-Spectrogram (16kHz)", fontsize=11, fontweight="bold")
     ax.set_xlabel("Time (seconds)", fontsize=9)

@@ -6,8 +6,8 @@ Runs on http://localhost:5050
 import os
 import io
 import time
-from fastapi import FastAPI, File, UploadFile, Form
-from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+from fastapi import FastAPI, File, UploadFile
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -73,9 +73,7 @@ HTML_CONTENT = """<!DOCTYPE html>
             align-items: center;
             gap: 12px;
         }
-        .brand-icon {
-            font-size: 1.8rem;
-        }
+        .brand-icon { font-size: 1.8rem; }
         .brand h1 {
             font-size: 1.35rem;
             font-weight: 800;
@@ -199,9 +197,7 @@ HTML_CONTENT = """<!DOCTYPE html>
         @keyframes spin { to { transform: rotate(360deg); } }
 
         /* Results Card */
-        #results-container {
-            display: none;
-        }
+        #results-container { display: none; }
         .result-banner {
             border-radius: 12px;
             padding: 20px;
@@ -220,15 +216,8 @@ HTML_CONTENT = """<!DOCTYPE html>
             border: 1px solid rgba(16, 185, 129, 0.4);
             color: #a7f3d0;
         }
-        .verdict-title {
-            font-size: 1.3rem;
-            font-weight: 800;
-        }
-        .verdict-sub {
-            font-size: 0.85rem;
-            opacity: 0.9;
-            margin-top: 4px;
-        }
+        .verdict-title { font-size: 1.3rem; font-weight: 800; }
+        .verdict-sub { font-size: 0.85rem; opacity: 0.9; margin-top: 4px; }
         .score-pill {
             font-family: 'JetBrains Mono', monospace;
             font-size: 1.8rem;
@@ -311,10 +300,10 @@ HTML_CONTENT = """<!DOCTYPE html>
             <div class="section-title">Trigger Voice Detection</div>
             
             <div class="btn-group">
-                <button class="btn btn-sample-human" onclick="runSample('samples/sample_real_human.wav', 'Authentic Human Voice')">
+                <button class="btn btn-sample-human" onclick="runSample('samples/sample_real_human.wav')">
                     <span>🟢</span> Test Sample: Real Human
                 </button>
-                <button class="btn btn-sample-clone" onclick="runSample('samples/sample_ai_clone.wav', 'AI Cloned Voice')">
+                <button class="btn btn-sample-clone" onclick="runSample('samples/sample_ai_clone.wav')">
                     <span>🔴</span> Test Sample: AI Clone
                 </button>
                 <button class="btn btn-mic" id="mic-btn" onclick="toggleMicrophone()">
@@ -388,18 +377,65 @@ HTML_CONTENT = """<!DOCTYPE html>
     </div>
 
     <script>
-        let mediaRecorder;
-        let audioChunks = [];
         let isRecording = false;
+        let audioContext = null;
+        let mediaStream = null;
+        let recorderNode = null;
+        let recordedBuffers = [];
 
-        async function runSample(samplePath, label) {
+        // Universal 16-bit PCM WAV Encoder (compatible with Safari, Chrome, Firefox)
+        function exportWAV(buffers, sampleRate) {
+            let totalLength = 0;
+            for (let b of buffers) totalLength += b.length;
+            let merged = new Float32Array(totalLength);
+            let offset = 0;
+            for (let b of buffers) {
+                merged.set(b, offset);
+                offset += b.length;
+            }
+
+            const wavBuffer = new ArrayBuffer(44 + merged.length * 2);
+            const view = new DataView(wavBuffer);
+
+            function writeString(v, off, str) {
+                for (let i = 0; i < str.length; i++) v.setUint8(off + i, str.charCodeAt(i));
+            }
+
+            writeString(view, 0, 'RIFF');
+            view.setUint32(4, 36 + merged.length * 2, true);
+            writeString(view, 8, 'WAVE');
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); // PCM format
+            view.setUint16(22, 1, true); // Mono
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * 2, true); // Byte rate
+            view.setUint16(32, 2, true); // Block align
+            view.setUint16(34, 16, true); // Bits per sample
+            writeString(view, 36, 'data');
+            view.setUint32(40, merged.length * 2, true);
+
+            let dataOffset = 44;
+            for (let i = 0; i < merged.length; i++) {
+                let s = Math.max(-1, Math.min(1, merged[i]));
+                view.setInt16(dataOffset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+                dataOffset += 2;
+            }
+            return new Blob([view], { type: 'audio/wav' });
+        }
+
+        async function runSample(samplePath) {
             showLoading(true);
             try {
                 const res = await fetch('/api/analyze-path?path=' + encodeURIComponent(samplePath));
+                if (!res.ok) {
+                    const err = await res.text();
+                    throw new Error(err);
+                }
                 const data = await res.json();
                 renderResults(data);
             } catch (err) {
-                alert('Analysis failed: ' + err);
+                alert('Analysis failed: ' + err.message);
             } finally {
                 showLoading(false);
             }
@@ -417,10 +453,14 @@ HTML_CONTENT = """<!DOCTYPE html>
 
             try {
                 const res = await fetch('/api/analyze', { method: 'POST', body: formData });
+                if (!res.ok) {
+                    const err = await res.text();
+                    throw new Error(err);
+                }
                 const data = await res.json();
                 renderResults(data);
             } catch (err) {
-                alert('Upload failed: ' + err);
+                alert('Upload failed: ' + err.message);
             } finally {
                 showLoading(false);
             }
@@ -433,41 +473,59 @@ HTML_CONTENT = """<!DOCTYPE html>
 
             if (!isRecording) {
                 try {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    mediaRecorder = new MediaRecorder(stream);
-                    audioChunks = [];
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    const sourceNode = audioContext.createMediaStreamSource(mediaStream);
 
-                    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
-                    mediaRecorder.onstop = async () => {
-                        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                        showLoading(true);
-                        const formData = new FormData();
-                        formData.append('audio', audioBlob, 'mic_recording.wav');
-                        try {
-                            const res = await fetch('/api/analyze', { method: 'POST', body: formData });
-                            const data = await res.json();
-                            renderResults(data);
-                        } catch (err) {
-                            alert('Mic analysis failed: ' + err);
-                        } finally {
-                            showLoading(false);
-                        }
+                    // Buffer size 4096, 1 input channel, 1 output channel
+                    recorderNode = audioContext.createScriptProcessor(4096, 1, 1);
+                    recordedBuffers = [];
+
+                    recorderNode.onaudioprocess = e => {
+                        if (!isRecording) return;
+                        const channelData = e.inputBuffer.getChannelData(0);
+                        recordedBuffers.push(new Float32Array(channelData));
                     };
 
-                    mediaRecorder.start();
+                    sourceNode.connect(recorderNode);
+                    recorderNode.connect(audioContext.destination);
+
                     isRecording = true;
                     btn.classList.add('recording');
-                    text.innerText = 'Stop Recording (Listening...)';
+                    text.innerText = 'Stop & Analyze';
                     icon.innerText = '⏹️';
                 } catch (err) {
-                    alert('Microphone access denied: ' + err);
+                    alert('Microphone access denied: ' + err.message);
                 }
             } else {
-                mediaRecorder.stop();
                 isRecording = false;
                 btn.classList.remove('recording');
                 text.innerText = 'Record Microphone';
                 icon.innerText = '🎙️';
+
+                if (recorderNode) recorderNode.disconnect();
+                if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+
+                const currentSR = audioContext.sampleRate;
+                const wavBlob = exportWAV(recordedBuffers, currentSR);
+
+                showLoading(true);
+                const formData = new FormData();
+                formData.append('audio', wavBlob, 'recording.wav');
+
+                try {
+                    const res = await fetch('/api/analyze', { method: 'POST', body: formData });
+                    if (!res.ok) {
+                        const err = await res.text();
+                        throw new Error(err);
+                    }
+                    const data = await res.json();
+                    renderResults(data);
+                } catch (err) {
+                    alert('Mic analysis failed: ' + err.message);
+                } finally {
+                    showLoading(false);
+                }
             }
         }
 
@@ -503,11 +561,9 @@ HTML_CONTENT = """<!DOCTYPE html>
             document.getElementById('val-pitch').innerText = (data.forensics.pitch_f0_mean || 0) + ' Hz';
             document.getElementById('val-flatness').innerText = data.forensics.spectral_flatness || 0;
 
-            // Spectrogram
             const img = document.getElementById('spectrogram-img');
             img.src = '/' + data.spectrogram_path + '?t=' + Date.now();
 
-            // Timeline
             const tbody = document.getElementById('timeline-body');
             tbody.innerHTML = '';
             (data.segments || []).forEach(seg => {
@@ -537,18 +593,25 @@ def index():
 @app.post("/api/analyze")
 async def analyze_uploaded_audio(audio: UploadFile = File(...)):
     contents = await audio.read()
-    result = analyze_voice(contents, clip_id=f"upload_{int(time.time()*1000)}")
-    return JSONResponse(result)
+    try:
+        result = analyze_voice(contents, clip_id=f"upload_{int(time.time()*1000)}")
+        return JSONResponse(result)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JSONResponse(status_code=400, content={"error": str(e)})
 
 @app.get("/api/analyze-path")
 def analyze_path(path: str):
     if not os.path.exists(path):
         return JSONResponse(status_code=404, content={"error": f"Path not found: {path}"})
-    result = analyze_voice(path, clip_id=f"sample_{int(time.time()*1000)}")
-    return JSONResponse(result)
+    try:
+        result = analyze_voice(path, clip_id=f"sample_{int(time.time()*1000)}")
+        return JSONResponse(result)
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JSONResponse(status_code=400, content={"error": str(e)})
 
 if __name__ == "__main__":
-    print("\n" + "=" * 60)
-    print("🚀 Voice Clone Shield Local Lab running at http://localhost:5050")
-    print("=" * 60 + "\n")
     uvicorn.run(app, host="127.0.0.1", port=5050, log_level="info")
