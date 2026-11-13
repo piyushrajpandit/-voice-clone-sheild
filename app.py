@@ -3,6 +3,9 @@ from typing import Optional
 import io
 import time
 import numpy as np
+import gc
+import torch
+torch.set_num_threads(1)
 import soundfile as sf
 import scipy.signal
 from fastapi import FastAPI, File, UploadFile, Form
@@ -130,8 +133,9 @@ def extract_librosa_forensics(audio_data, sr=16000):
         rolloff = librosa.feature.spectral_rolloff(y=audio_data, sr=sr, roll_percent=0.85)
         mean_rolloff = round(float(np.mean(rolloff)), 1)
 
-        # Fundamental Frequency F0 / Pitch estimation
-        pitches, magnitudes = librosa.piptrack(y=audio_data, sr=sr)
+        # Fundamental Frequency F0 / Pitch estimation (speed-optimized for cloud CPU)
+        pitch_slice = audio_data[:sr * 3]
+        pitches, magnitudes = librosa.piptrack(y=pitch_slice, sr=sr, hop_length=1024)
         valid_pitches = pitches[magnitudes > np.median(magnitudes)]
         mean_pitch = round(float(np.mean(valid_pitches)), 1) if len(valid_pitches) > 0 else 0.0
         pitch_jitter = round(float(np.std(valid_pitches)), 1) if len(valid_pitches) > 0 else 0.0
@@ -168,7 +172,7 @@ def transcribe_audio_snippet(audio_data, sr=16000):
     """Transcribe audio with multilingual auto-detection and check for spoken emergency safewords."""
     try:
         # Multilingual auto-detection (detects en, hi, bn, ta, te, es, fr, etc.)
-        segments, info = whisper_model.transcribe(audio_data, beam_size=1)
+        segments, info = whisper_model.transcribe(audio_data, beam_size=1, vad_filter=True)
         text = " ".join([seg.text.strip() for seg in segments]).strip()
         
         # Check if the designated safe-word or keyword was spoken
@@ -212,7 +216,7 @@ async def analyze_audio(file: Optional[UploadFile] = File(None), audio: Optional
         return JSONResponse(status_code=400, content={"error": f"Audio processing error: {str(e)}"})
     
     duration = round(len(audio_data) / sr, 2)
-    sample_slice = audio_data[:16000 * 10]
+    sample_slice = audio_data[:16000 * 5]
     
     # 1. Neural Spoof Classifier (mo-thecreator)
     predictions = classifier({"raw": sample_slice, "sampling_rate": 16000})
