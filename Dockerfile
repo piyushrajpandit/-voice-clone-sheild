@@ -35,4 +35,4 @@ RUN mkdir -p outputs
 # Hugging Face Spaces maps port 7860 by default
 EXPOSE 7860
 
-CMD ["uvicorn", "server:app", "--host", "0.0.0.0", "--port", "7860"]
+CMD ["sh", "-c", "uvicorn server:app --host 0.0.0.0 --port ${PORT:-7860}"]
