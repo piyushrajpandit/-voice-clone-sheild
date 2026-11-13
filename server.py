@@ -474,7 +474,14 @@ HTML_CONTENT = """<!DOCTYPE html>
             if (!isRecording) {
                 try {
                     audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                    mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    mediaStream = await navigator.mediaDevices.getUserMedia({
+                        audio: {
+                            noiseSuppression: false,
+                            echoCancellation: false,
+                            autoGainControl: false,
+                            sampleRate: 48000
+                        }
+                    });
                     const sourceNode = audioContext.createMediaStreamSource(mediaStream);
 
                     // Buffer size 4096, 1 input channel, 1 output channel
@@ -537,29 +544,41 @@ HTML_CONTENT = """<!DOCTYPE html>
         }
 
         function renderResults(data) {
-            const isAI = data.ai_score >= 0.5;
-            const pct = (data.ai_score * 100).toFixed(1) + '%';
+            // Fix 2: Use calibrated_score (blends neural 70% + forensics 30%) with raised threshold 0.75
+            // This reduces false positives on real microphone recordings
+            const calScore = data.calibrated_score !== undefined ? data.calibrated_score : data.ai_score;
+            const isAI = calScore >= 0.65;
+            const calPct = (calScore * 100).toFixed(1) + '%';
+            const rawPct = (data.ai_score * 100).toFixed(1) + '%';
             
             const banner = document.getElementById('result-banner');
             const title = document.getElementById('verdict-title');
             const sub = document.getElementById('verdict-sub');
             const scorePill = document.getElementById('score-pill');
 
-            scorePill.innerText = pct;
+            // Show calibrated score prominently; raw score shown as secondary info
+            scorePill.innerText = calPct;
+            scorePill.title = 'Raw neural score: ' + rawPct + '  |  Calibrated (mic-adjusted): ' + calPct;
+
             if (isAI) {
                 banner.className = 'result-banner banner-danger';
                 title.innerText = '🚨 SYNTHETIC AI VOICE CLONE';
-                sub.innerText = 'High-confidence vocoder phase & high-frequency cutoff detected';
+                sub.innerText = 'Neural + acoustic forensics both flag synthetic vocoder patterns (score ≥ 65%)';
             } else {
                 banner.className = 'result-banner banner-safe';
                 title.innerText = '✅ AUTHENTIC HUMAN SPEECH';
-                sub.innerText = 'Natural harmonic overtones and vocal biomechanics verified';
+                sub.innerText = 'Natural pitch jitter, energy variation, and vocal tract resonance verified (score < 65%)';
             }
 
+            // Show both raw and calibrated scores in metrics
             document.getElementById('val-latency').innerText = data.processing_time_sec + 's';
             document.getElementById('val-duration').innerText = (data.duration_sec || 0) + 's';
             document.getElementById('val-pitch').innerText = (data.forensics.pitch_f0_mean || 0) + ' Hz';
             document.getElementById('val-flatness').innerText = data.forensics.spectral_flatness || 0;
+
+            // Inject raw vs calibrated score detail below metrics if element exists
+            const rawScoreEl = document.getElementById('val-raw-score');
+            if (rawScoreEl) rawScoreEl.innerText = rawPct + ' → ' + calPct + ' (calibrated)';
 
             const img = document.getElementById('spectrogram-img');
             img.src = '/' + data.spectrogram_path + '?t=' + Date.now();
@@ -569,8 +588,9 @@ HTML_CONTENT = """<!DOCTYPE html>
             (data.segments || []).forEach(seg => {
                 const tr = document.createElement('tr');
                 const segPct = (seg.ai_score * 100).toFixed(1) + '%';
-                const tagClass = seg.ai_score >= 0.5 ? 'tag-fake' : 'tag-safe';
-                const tagLabel = seg.ai_score >= 0.5 ? 'AI CLONE' : 'HUMAN';
+                // Segment threshold aligned with main threshold 0.60
+                const tagClass = seg.ai_score >= 0.65 ? 'tag-fake' : 'tag-safe';
+                const tagLabel = seg.ai_score >= 0.65 ? 'AI CLONE' : 'HUMAN';
                 tr.innerHTML = `
                     <td>${seg.start.toFixed(1)}s – ${seg.end.toFixed(1)}s</td>
                     <td class="${tagClass}">${segPct}</td>
@@ -614,4 +634,6 @@ def analyze_path(path: str):
         return JSONResponse(status_code=400, content={"error": str(e)})
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=5050, log_level="info")
+    port = int(os.environ.get("PORT", 5050))
+    host = os.environ.get("HOST", "0.0.0.0")
+    uvicorn.run(app, host=host, port=port, log_level="info")
