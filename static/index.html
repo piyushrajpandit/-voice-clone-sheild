@@ -1016,8 +1016,7 @@
 
         <!-- Mode Segmented Control -->
         <div class="segmented-controls" role="tablist" aria-label="Verification Mode">
-            <button class="segment-btn active" id="tab-audio" role="tab" aria-selected="true" onclick="switchMode('audio')">File Analysis</button>
-            <button class="segment-btn" id="tab-video" role="tab" aria-selected="false" onclick="switchMode('video')">Video Intercept</button>
+            <button class="segment-btn active" id="tab-audio" role="tab" aria-selected="true" onclick="switchMode('audio')">Audio Analysis</button>
             <button class="segment-btn" id="tab-call" role="tab" aria-selected="false" onclick="switchMode('call')">Live Call Monitor</button>
             <button class="segment-btn" id="tab-scam" role="tab" aria-selected="false" onclick="switchMode('scam')">Fraud Audit</button>
         </div>
@@ -1037,15 +1036,15 @@
                 <!-- AUDIO MODE VIEW -->
                 <div id="audio-mode-view">
                     <!-- Dropzone -->
-                    <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload audio or video file" onclick="document.getElementById('file-input').click()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('file-input').click();}">
+                    <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload audio file (.wav, .mp3, .m4a)" onclick="document.getElementById('file-input').click()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('file-input').click();}">
                         <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
                             <polyline points="17 8 12 3 7 8"></polyline>
                             <line x1="12" y1="3" x2="12" y2="15"></line>
                         </svg>
-                        <div class="dropzone-title">Upload audio or video file</div>
+                        <div class="dropzone-title">Upload audio file (.wav, .mp3, .m4a)</div>
                         <div class="dropzone-sub">WAV, MP3, MP4, WebM &middot; Drag and drop or browse</div>
-                        <input type="file" id="file-input" accept="audio/*,video/*" style="display:none;" onchange="handleFileUpload(event)">
+                        <input type="file" id="file-input" accept="audio/*" style="display:none;" onchange="handleFileUpload(event)">
                     </div>
 
                     <!-- Microphone Recording Button -->
@@ -1061,19 +1060,7 @@
                     <div class="rec-timer" id="rec-timer">Recording 00:00</div>
                 </div>
 
-                <!-- VIDEO MODE VIEW -->
-                <div id="video-mode-view">
-                    <div class="video-wrapper">
-                        <video id="live-video" autoplay playsinline muted></video>
-                        <div class="video-hud">
-                            <span class="hud-badge" id="video-hud-text">Camera Standby</span>
-                        </div>
-                    </div>
-                    <div style="display:flex;gap:10px;">
-                        <button class="btn-secondary" id="btn-cam-toggle" onclick="toggleCameraStream()" style="flex:1;">Enable Camera</button>
-                        <button class="btn-primary" id="btn-record-video" onclick="toggleVideoRecording()" disabled style="flex:1;">Record Stream</button>
-                    </div>
-                </div>
+
 
                 <!-- Native Player -->
                 <audio id="audio-player" controls style="display:none;"></audio>
@@ -1272,6 +1259,63 @@
                 </div>
             </div>
 
+            <!-- ──────────────────────────────────────────
+                 TWILIO AUTOMATED SMS ALERTS CARD
+            ────────────────────────────────────────── -->
+            <div class="card" style="margin-bottom:20px;">
+                <div class="card-header">
+                    <div>
+                        <span class="card-title" style="display:flex;align-items:center;gap:8px;">
+                            <span>Automated Emergency SMS Alerts</span>
+                            <span style="font-size:0.75rem;padding:2px 8px;border-radius:12px;background:#e0f2fe;color:#0369a1;font-weight:600;">Twilio Powered</span>
+                        </span>
+                        <div class="card-meta" style="margin-top:2px;">
+                            Instantly dispatches SMS warning to emergency family/guardian contact when extortion, bank theft, or AI deepfakes are intercepted.
+                        </div>
+                    </div>
+                    <span id="sms-status-pill" class="verdict-badge" style="background:#f0f0f2;color:var(--text-secondary);">Checking Twilio...</span>
+                </div>
+
+                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(260px, 1fr));gap:16px;padding:8px 0;">
+                    <div>
+                        <label style="display:block;font-size:0.8rem;font-weight:600;margin-bottom:6px;color:var(--text-secondary);">
+                            Emergency Contact Phone (E.164 format)
+                        </label>
+                        <div style="display:flex;gap:8px;">
+                            <input type="text" id="sms-emergency-input" placeholder="+1234567890 or +919876543210" 
+                                style="flex:1;padding:8px 12px;border:1px solid var(--border-strong);border-radius:var(--radius-sm);font-family:var(--font-mono);font-size:0.85rem;">
+                            <button class="btn-primary" onclick="saveSmsContact()" style="padding:8px 16px;font-size:0.85rem;">Save</button>
+                        </div>
+                        <div style="font-size:0.75rem;color:var(--text-tertiary);margin-top:4px;">
+                            Recipient will receive alert with scam category, triggers & immediate advice.
+                        </div>
+                    </div>
+
+                    <div>
+                        <label style="display:block;font-size:0.8rem;font-weight:600;margin-bottom:6px;color:var(--text-secondary);">
+                            Verification & Test Transmission
+                        </label>
+                        <div style="display:flex;gap:8px;">
+                            <button class="btn-secondary" onclick="triggerTestSms()" id="btn-test-sms" style="flex:1;padding:8px 12px;font-size:0.85rem;">
+                                📲 Send Test SMS
+                            </button>
+                        </div>
+                        <div style="font-size:0.75rem;color:var(--text-tertiary);margin-top:4px;">
+                            Simulates live extortion trigger and verifies Twilio delivery.
+                        </div>
+                    </div>
+                </div>
+
+                <div id="sms-test-result" style="display:none;margin-top:12px;padding:10px 14px;border-radius:var(--radius-sm);font-size:0.82rem;font-family:var(--font-mono);line-height:1.4;"></div>
+
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:0.78rem;color:var(--text-tertiary);border-top:1px solid var(--border-subtle);padding-top:10px;flex-wrap:wrap;gap:8px;">
+                    <span style="display:flex;align-items:center;gap:6px;">
+                        <span>⏱️ <strong>Anti-Spam Cooldown:</strong> 300s guard per session prevents network flooding during live calls</span>
+                    </span>
+                    <span id="sms-sender-info">Sender: Loading...</span>
+                </div>
+            </div>
+
             <!-- Audit Trail Table -->
             <div class="card">
                 <div class="card-header">
@@ -1406,7 +1450,7 @@
     /* ── Mode switch ── */
     function switchMode(mode) {
         currentMode = mode;
-        ['audio','video','call','scam'].forEach(m => {
+        ['audio','call','scam'].forEach(m => {
             const tab = document.getElementById(`tab-${m}`);
             if (tab) {
                 tab.classList.toggle('active', m === mode);
@@ -1418,20 +1462,15 @@
         const callWrapper = document.getElementById('call-monitor-wrapper');
         const scamDash = document.getElementById('scam-dashboard-wrapper');
 
-        if (mainGrid) mainGrid.style.display = (mode === 'audio' || mode === 'video') ? 'grid' : 'none';
+        if (mainGrid) mainGrid.style.display = (mode === 'audio') ? 'grid' : 'none';
         if (callWrapper) callWrapper.style.display = (mode === 'call') ? 'block' : 'none';
         if (scamDash) scamDash.style.display = (mode === 'scam') ? 'flex' : 'none';
 
         if (mode === 'audio') {
-            document.getElementById('audio-mode-view').style.display = 'block';
-            document.getElementById('video-mode-view').style.display = 'none';
+            const av = document.getElementById('audio-mode-view');
+            if (av) av.style.display = 'block';
             document.getElementById('panel-title').innerText = 'Audio Input';
             document.getElementById('panel-sub').innerText = '16kHz PCM Stream';
-        } else if (mode === 'video') {
-            document.getElementById('audio-mode-view').style.display = 'none';
-            document.getElementById('video-mode-view').style.display = 'block';
-            document.getElementById('panel-title').innerText = 'Video Intercept';
-            document.getElementById('panel-sub').innerText = 'Camera & Microphone Stream';
         } else if (mode === 'call') {
             setTimeout(resizeThreatCanvas, 100);
         } else if (mode === 'scam') {
@@ -1558,6 +1597,10 @@
             statusPill.innerText = 'Complete';
             transcriptDisplay.className = 'section-content';
             renderResults(data, filename, latency);
+            // Immediately sync Fraud Audit history so every recorded sound appears
+            if (typeof refreshDashboard === 'function') {
+                refreshDashboard();
+            }
         } catch (err) {
             statusPill.innerText = 'Error';
             transcriptDisplay.className = 'section-content';
@@ -1832,57 +1875,7 @@
         }
     }
 
-    /* ── Video Intercept Controls ── */
-    let isVideoRecording = false;
 
-    async function toggleCameraStream() {
-        const videoElem = document.getElementById('live-video');
-        const btnCam = document.getElementById('btn-cam-toggle');
-        const btnRec = document.getElementById('btn-record-video');
-        const hudText = document.getElementById('video-hud-text');
-
-        if (mediaStream) {
-            mediaStream.getTracks().forEach(t => t.stop());
-            mediaStream = null;
-            videoElem.srcObject = null;
-            btnCam.innerText = 'Enable Camera';
-            btnRec.disabled = true;
-            hudText.innerText = 'Camera Standby';
-        } else {
-            try {
-                mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                videoElem.srcObject = mediaStream;
-                btnCam.innerText = 'Disable Camera';
-                btnRec.disabled = false;
-                hudText.innerText = 'Active Camera Stream';
-            } catch (err) {
-                alert('Camera access denied: ' + err.message);
-            }
-        }
-    }
-
-    async function toggleVideoRecording() {
-        const btn = document.getElementById('btn-record-video');
-        if (isVideoRecording) {
-            isVideoRecording = false;
-            btn.classList.remove('recording');
-            btn.innerText = 'Record Stream';
-            document.getElementById('status-pill').innerText = 'Extracting Audio...';
-
-            const cleanWavBlob = await stopPcmCapture();
-            const player = document.getElementById('audio-player');
-            player.src = URL.createObjectURL(cleanWavBlob);
-            player.style.display = 'block';
-
-            analyzeAudioBlob(cleanWavBlob, 'live_video_stream.wav');
-        } else {
-            if (!mediaStream) return;
-            isVideoRecording = true;
-            await startPcmCapture(mediaStream);
-            btn.classList.add('recording');
-            btn.innerText = 'Stop & Analyze';
-        }
-    }
 
     /* ── Safe-Word Verification ── */
     async function verifySafeWord() {
@@ -2076,6 +2069,10 @@
             if (threatHistory.length > 20) threatHistory.shift();
             drawThreatChart();
             appendScanLogRow(data, score, isFake);
+            // Immediately sync Fraud Audit history
+            if (typeof refreshDashboard === 'function') {
+                refreshDashboard();
+            }
         } catch (e) {
             console.error('Chunk analysis failed', e);
         }
@@ -2333,6 +2330,114 @@
             outBox.innerText = 'Evaluation error: ' + e.message;
         }
     }
+
+    /* ═══════════════════════════════════════════
+       TWILIO SMS EMERGENCY ALERT HANDLERS
+    ═══════════════════════════════════════════ */
+    async function loadSmsConfig() {
+        try {
+            const res = await fetch('/api/sms/config');
+            const data = await res.json();
+            const pill = document.getElementById('sms-status-pill');
+            const input = document.getElementById('sms-emergency-input');
+            const sender = document.getElementById('sms-sender-info');
+
+            if (input && data.emergency_contact && data.emergency_contact !== 'Not set') {
+                input.value = data.emergency_contact;
+            }
+
+            if (sender) {
+                sender.innerText = `Twilio Sender: ${data.from_number} | SID: ${data.account_sid_masked}`;
+            }
+
+            if (pill) {
+                if (data.is_configured) {
+                    pill.innerText = 'Twilio Armed';
+                    pill.style.background = '#dcfce7';
+                    pill.style.color = 'var(--status-safe)';
+                } else {
+                    pill.innerText = 'Dev / Sim Mode';
+                    pill.style.background = '#fff8e6';
+                    pill.style.color = 'var(--status-warning)';
+                }
+            }
+        } catch (e) {
+            console.error('Error loading SMS config', e);
+        }
+    }
+
+    async function saveSmsContact() {
+        const phone = document.getElementById('sms-emergency-input').value.trim();
+        if (!phone) {
+            alert('Please enter an emergency phone number in E.164 format (e.g. +1234567890).');
+            return;
+        }
+        try {
+            const res = await fetch('/api/sms/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ emergency_contact: phone })
+            });
+            const data = await res.json();
+            alert('Emergency contact phone updated: ' + phone);
+            loadSmsConfig();
+        } catch (e) {
+            alert('Failed to save contact: ' + e.message);
+        }
+    }
+
+    async function triggerTestSms() {
+        const btn = document.getElementById('btn-test-sms');
+        const resBox = document.getElementById('sms-test-result');
+        const phone = document.getElementById('sms-emergency-input').value.trim();
+
+        if (btn) btn.disabled = true;
+        if (resBox) {
+            resBox.style.display = 'block';
+            resBox.style.background = 'var(--bg-subtle)';
+            resBox.style.color = 'var(--text-secondary)';
+            resBox.innerText = 'Transmitting security verification alert via Twilio...';
+        }
+
+        try {
+            const res = await fetch('/api/sms/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone: phone || undefined })
+            });
+            const data = await res.json();
+            if (resBox) {
+                if (data.sent) {
+                    resBox.style.background = 'var(--status-safe-bg)';
+                    resBox.style.color = 'var(--status-safe)';
+                    resBox.innerHTML = `✅ <strong>Test Alert Delivered!</strong><br>Recipient: ${data.recipient}<br>Twilio SID: ${data.sid}<br><span style="font-size:0.75rem;">${data.body.replace(/\n/g, '<br>')}</span>`;
+                } else if (data.simulated) {
+                    resBox.style.background = 'var(--status-warning-bg)';
+                    resBox.style.color = 'var(--status-warning)';
+                    resBox.innerHTML = `⚠️ <strong>Simulation Mode</strong> (Credentials not active in server env):<br><span style="font-size:0.75rem;">${data.body.replace(/\n/g, '<br>')}</span><br><br>💡 <em>To send live SMS over carrier networks, add TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN to your .env file.</em>`;
+                } else {
+                    resBox.style.background = 'var(--status-danger-bg)';
+                    resBox.style.color = 'var(--status-danger)';
+                    resBox.innerText = `❌ Error: ${data.error || data.reason}`;
+                }
+            }
+        } catch (e) {
+            if (resBox) {
+                resBox.style.background = 'var(--status-danger-bg)';
+                resBox.style.color = 'var(--status-danger)';
+                resBox.innerText = 'Test transmission failed: ' + e.message;
+            }
+        } finally {
+            if (btn) btn.disabled = false;
+        }
+    }
+
+    // Auto-load SMS config when page mounts
+    window.addEventListener('DOMContentLoaded', () => {
+        loadSmsConfig();
+    });
+        // Auto-load audit records on launch
+    setTimeout(() => { if (typeof refreshDashboard === 'function') refreshDashboard(); }, 500);
     </script>
 </body>
 </html>

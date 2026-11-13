@@ -17,6 +17,7 @@ import librosa
 from faster_whisper import WhisperModel
 from scam_detector import analyze_transcript
 import db
+import sms_service
 
 app = FastAPI(title="Voice Clone Shield")
 
@@ -255,11 +256,11 @@ async def analyze_audio(file: Optional[UploadFile] = File(None), audio: Optional
             verdict="DEEPFAKE_CLONE" if is_fake else "AUTHENTIC_HUMAN",
             composite_verdict=composite_verdict,
             threat_score=round(fake_score * 100, 1),
-            scam_score=scam_analysis["scam_score"],
-            risk_level=scam_analysis["risk_level"],
-            primary_category=scam_analysis["primary_category"],
+            scam_score=float(scam_analysis.get("scam_score", 0.0)),
+            risk_level=str(scam_analysis.get("risk_level", "SAFE")),
+            primary_category=scam_analysis.get("primary_category") or scam_analysis.get("detected_category") or "Normal Audio",
             detected_language=speech.get("language", "en"),
-            transcript=speech["transcript"],
+            transcript=speech.get("transcript", ""),
             matched_keywords=scam_analysis.get("matched_keywords", []),
             urgency_markers=scam_analysis.get("urgency_markers", []),
             duration=duration,
@@ -273,6 +274,18 @@ async def analyze_audio(file: Optional[UploadFile] = File(None), audio: Optional
     except Exception as dbe:
         print(f"DB logging warning: {dbe}")
 
+    # 7. Automated Twilio SMS Threat Alert (Fraud / Extortion / AI Cloned Scams)
+    sms_alert = None
+    if scam_analysis.get("is_scam") or composite_verdict in ["CRITICAL_AI_SCAM", "HUMAN_FRAUD_CALL"]:
+        try:
+            sms_alert = sms_service.send_scam_alert_sms(
+                call_id=str(call_id or "live-stream"),
+                scam_analysis=scam_analysis,
+                is_fake_voice=is_fake
+            )
+        except Exception as smse:
+            print(f"SMS alert warning: {smse}")
+
     hf_cutoff = float(np.mean(np.abs(np.diff(sample_slice))))
     latency_ms = round((time.time() - start_time) * 1000)
 
@@ -283,6 +296,7 @@ async def analyze_audio(file: Optional[UploadFile] = File(None), audio: Optional
         "call_id": call_id,
         "verdict": "DEEPFAKE_CLONE" if is_fake else "AUTHENTIC_HUMAN",
         "composite_verdict": composite_verdict,
+        "sms_alert": sms_alert,
         "is_fake": is_fake,
         "threat_score": round(fake_score * 100, 1),
         "confidence": round(confidence * 100, 1),
@@ -337,6 +351,37 @@ async def verify_safeword(answer: str = Form(...)):
         "verified": is_match,
         "message": "Protocol Verified: Caller identity confirmed." if is_match else "Access Denied: Incorrect family safe-word. Call terminated."
     }
+
+# ── Twilio SMS Security Alert Endpoints ──
+@app.get("/api/sms/config")
+async def get_sms_configuration():
+    """Retrieve Twilio SMS configuration state (tokens are safely masked)."""
+    return sms_service.get_sms_config()
+
+@app.post("/api/sms/config")
+async def update_sms_configuration(payload: dict):
+    """Update runtime Twilio credentials or emergency contact phone number."""
+    updated = sms_service.update_sms_config(
+        account_sid=payload.get("account_sid"),
+        auth_token=payload.get("auth_token"),
+        from_number=payload.get("from_number"),
+        emergency_contact=payload.get("emergency_contact"),
+        enabled=payload.get("enabled")
+    )
+    return {"status": "success", "config": updated}
+
+@app.post("/api/sms/test")
+async def test_sms_alert(payload: Optional[dict] = None):
+    """Sends a verification SMS to confirm Twilio integration and phone routing."""
+    target_phone = (payload or {}).get("phone")
+    result = sms_service.send_test_sms(target_phone=target_phone)
+    return result
+
+@app.get("/api/sms/logs")
+async def get_sms_alert_logs(limit: int = 25):
+    """Retrieve recent automated SMS alert dispatch records."""
+    return sms_service.get_dispatch_logs(limit=limit)
+
 
 @app.get("/api/samples/{sample_name}")
 async def get_sample(sample_name: str):
