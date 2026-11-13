@@ -2,1086 +2,1395 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Voice Clone Shield | Real-time Deepfake Voice Detector</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Real-time synthetic speech verification, deepfake audio detection, and conversational fraud prevention.">
+    <title>Voice Clone Shield</title>
     <style>
         :root {
-            --bg-base: #060913;
-            --bg-card: rgba(15, 23, 42, 0.75);
-            --bg-card-border: rgba(56, 189, 248, 0.15);
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --accent-cyan: #06b6d4;
-            --accent-blue: #3b82f6;
-            --accent-orange: #f59e0b;
-            --status-green: #10b981;
-            --status-red: #f43f5e;
-            --status-red-glow: rgba(244, 63, 94, 0.4);
-            --status-green-glow: rgba(16, 185, 129, 0.4);
+            /* Apple-restrained color system */
+            --bg-page: #f5f5f7;
+            --bg-surface: #ffffff;
+            --bg-subtle: #f0f0f2;
+            --bg-secondary: #e8e8ed;
+            --border-subtle: rgba(0, 0, 0, 0.08);
+            --border-strong: rgba(0, 0, 0, 0.16);
+            --text-primary: #1d1d1f;
+            --text-secondary: #6e6e73;
+            --text-tertiary: #86868b;
+            --accent-primary: #0071e3;
+            --accent-hover: #0077ed;
+            --accent-active: #0062c4;
+            --status-safe: #1a7f37;
+            --status-safe-bg: #edf7ed;
+            --status-safe-border: #bbf7d0;
+            --status-danger: #cf222e;
+            --status-danger-bg: #fdf2f2;
+            --status-danger-border: #fecaca;
+            --status-warning: #9a6700;
+            --status-warning-bg: #fff8e6;
+            --status-warning-border: #fed7aa;
+            
+            /* Typography & Metrics */
+            --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 14px;
+            --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+            --shadow-elevated: 0 4px 14px rgba(0, 0, 0, 0.06);
+            --focus-ring: 0 0 0 3px rgba(0, 113, 227, 0.25);
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
 
         body {
-            background-color: var(--bg-base);
-            background-image:
-                radial-gradient(circle at 15% 20%, rgba(6, 182, 212, 0.08) 0%, transparent 40%),
-                radial-gradient(circle at 85% 80%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
-                linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-            background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
-            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-page);
             color: var(--text-primary);
-            min-height: 100vh;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .header {
-            text-align: center;
-            max-width: 850px;
-            margin-bottom: 20px;
-        }
-
-        .shield-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            background: rgba(6, 182, 212, 0.1);
-            border: 1px solid rgba(6, 182, 212, 0.3);
-            border-radius: 9999px;
-            padding: 6px 16px;
-            font-size: 0.85rem;
-            color: var(--accent-cyan);
-            font-weight: 600;
-            margin-bottom: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .pulse-dot {
-            width: 8px; height: 8px;
-            border-radius: 50%;
-            background-color: var(--status-green);
-            box-shadow: 0 0 10px var(--status-green);
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.4; transform: scale(1.2); }
-            100% { opacity: 1; transform: scale(1); }
-        }
-
-        h1 {
-            font-size: clamp(1.8rem, 5vw, 2.5rem);
-            font-weight: 800;
-            background: linear-gradient(135deg, #ffffff 40%, #94a3b8 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 8px;
-            letter-spacing: -0.5px;
-        }
-
-        .subtitle {
-            color: var(--text-secondary);
-            font-size: 1rem;
+            font-family: var(--font-sans);
+            font-size: 15px;
             line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            text-rendering: optimizeLegibility;
         }
 
-        /* ── TABS ── */
-        .mode-tabs {
+        /* ── Top Navigation ── */
+        .site-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: rgba(245, 245, 247, 0.92);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .nav-inner {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 0 24px;
+            height: 52px;
             display: flex;
-            background: rgba(30, 41, 59, 0.6);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px;
-            padding: 4px;
-            gap: 4px;
-            margin-bottom: 20px;
-            width: 100%;
-            max-width: 560px;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        .mode-tab {
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--status-safe);
+            display: inline-block;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            list-style: none;
+        }
+
+        .nav-link {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.15s ease;
+        }
+
+        .nav-link:hover {
+            color: var(--text-primary);
+        }
+
+        .nav-link:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
+            border-radius: var(--radius-sm);
+        }
+
+        /* ── Main Layout ── */
+        .page-container {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 48px 24px 80px;
+        }
+
+        /* ── Product Hero ── */
+        .hero {
+            text-align: center;
+            max-width: 760px;
+            margin: 0 auto 40px;
+        }
+
+        .hero-tagline {
+            display: inline-block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--accent-primary);
+            margin-bottom: 12px;
+        }
+
+        .hero h1 {
+            font-size: clamp(2rem, 3.5vw, 2.75rem);
+            font-weight: 600;
+            letter-spacing: -0.025em;
+            line-height: 1.15;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+
+        .hero p {
+            font-size: 1.05rem;
+            line-height: 1.5;
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        /* ── Segmented Mode Navigation ── */
+        .segmented-controls {
+            display: flex;
+            background: var(--bg-secondary);
+            border-radius: var(--radius-md);
+            padding: 3px;
+            max-width: 580px;
+            margin: 0 auto 36px;
+            gap: 2px;
+        }
+
+        .segment-btn {
             flex: 1;
-            padding: 10px 10px;
-            border-radius: 8px;
+            padding: 7px 14px;
             border: none;
             background: transparent;
             color: var(--text-secondary);
             font-family: inherit;
-            font-weight: 600;
-            font-size: 0.82rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border-radius: calc(var(--radius-md) - 3px);
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .segment-btn:hover {
+            color: var(--text-primary);
+        }
+
+        .segment-btn.active {
+            background: var(--bg-surface);
+            color: var(--text-primary);
+            font-weight: 600;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+
+        .segment-btn:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
+        }
+
+        /* ── Two-Column Product Grid ── */
+        .product-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.1fr;
+            gap: 24px;
+            align-items: start;
+        }
+
+        .card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .card-header {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 5px;
-            white-space: nowrap;
-        }
-
-        .mode-tab.active {
-            background: var(--accent-blue);
-            color: white;
-            box-shadow: 0 2px 10px rgba(59,130,246,0.4);
-        }
-
-        .mode-tab.active.call-tab {
-            background: linear-gradient(135deg, #dc2626, #9333ea);
-            box-shadow: 0 2px 14px rgba(220, 38, 38, 0.5);
-        }
-
-        /* ── DASHBOARD GRID ── */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-            max-width: 1100px;
-            width: 100%;
-        }
-
-        @media (max-width: 900px) {
-            .dashboard-grid { grid-template-columns: 1fr; }
-        }
-
-        /* ── CALL MONITOR FULL WIDTH ── */
-        .call-monitor-wrapper {
-            display: none;
-            width: 100%;
-            max-width: 1100px;
-            gap: 20px;
-            flex-direction: column;
-        }
-
-        .call-monitor-wrapper.active { display: flex; }
-
-        .call-top-row {
-            display: grid;
-            grid-template-columns: 1fr 1.4fr;
-            gap: 20px;
-        }
-
-        @media (max-width: 800px) {
-            .call-top-row { grid-template-columns: 1fr; }
-        }
-
-        /* ── CARDS ── */
-        .card {
-            background: var(--bg-card);
-            border: 1px solid var(--bg-card-border);
-            border-radius: 16px;
-            padding: 20px;
-            backdrop-filter: blur(16px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            justify-content: space-between;
+            margin-bottom: 18px;
+            padding-bottom: 14px;
+            border-bottom: 1px solid var(--border-subtle);
         }
 
         .card-title {
-            font-size: 1.1rem;
-            font-weight: 700;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .preset-buttons {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            margin-bottom: 20px;
-        }
-
-        .btn-preset {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: rgba(30, 41, 59, 0.6);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 12px;
-            padding: 14px 18px;
-            color: #f1f5f9;
-            font-family: inherit;
-            font-size: 0.95rem;
+            font-size: 1.05rem;
             font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
-            text-align: left;
+            letter-spacing: -0.01em;
+            color: var(--text-primary);
         }
 
-        .btn-preset:hover {
-            background: rgba(51, 65, 85, 0.8);
-            border-color: rgba(56,189,248,0.4);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+        .card-meta {
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
+            font-family: var(--font-mono);
         }
 
-        .tag {
-            font-size: 0.75rem;
-            font-weight: 700;
-            padding: 4px 10px;
-            border-radius: 6px;
-            text-transform: uppercase;
-        }
-        .tag-real { background: rgba(16,185,129,0.15); color: #34d399; border: 1px solid rgba(16,185,129,0.3); }
-        .tag-fake { background: rgba(244,63,94,0.15); color: #fb7185; border: 1px solid rgba(244,63,94,0.3); }
-
-        .upload-zone {
-            border: 2px dashed rgba(255,255,255,0.12);
-            border-radius: 12px;
-            padding: 20px;
+        /* ── File Upload Drop Zone ── */
+        .dropzone {
+            border: 1.5px dashed var(--border-strong);
+            background: var(--bg-subtle);
+            border-radius: var(--radius-md);
+            padding: 36px 20px;
             text-align: center;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: border-color 0.15s ease, background 0.15s ease;
             margin-bottom: 16px;
         }
 
-        .upload-zone:hover {
-            border-color: var(--accent-cyan);
-            background: rgba(6,182,212,0.04);
+        .dropzone:hover, .dropzone.dragover {
+            border-color: var(--accent-primary);
+            background: #ffffff;
         }
 
-        .record-controls { display: flex; gap: 12px; }
+        .dropzone:focus-visible {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: var(--focus-ring);
+        }
 
-        .btn-action {
-            flex: 1;
-            padding: 12px 16px;
-            border-radius: 10px;
-            border: none;
-            font-family: inherit;
-            font-weight: 600;
+        .dropzone-icon {
+            width: 32px;
+            height: 32px;
+            margin: 0 auto 10px;
+            color: var(--text-secondary);
+        }
+
+        .dropzone-title {
             font-size: 0.95rem;
-            cursor: pointer;
-            display: flex;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .dropzone-sub {
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
+        }
+
+        /* ── Action Buttons ── */
+        .btn-primary {
+            display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            transition: all 0.2s ease;
-        }
-
-        .btn-mic { background: #2563eb; color: white; }
-        .btn-mic:hover { background: #1d4ed8; }
-        .btn-mic.recording {
-            background: #dc2626;
-            animation: pulse-red 1.2s infinite;
-        }
-
-        .video-box-container {
-            display: none;
-            position: relative;
-            background: #020617;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 1px solid rgba(56,189,248,0.3);
-            margin-bottom: 16px;
-        }
-        .video-box-container.active { display: block; }
-
-        video {
             width: 100%;
-            height: 220px;
-            object-fit: cover;
-            display: block;
-            border-radius: 12px;
-            background: #000;
+            background: var(--accent-primary);
+            color: #ffffff;
+            border: none;
+            border-radius: var(--radius-md);
+            padding: 11px 18px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s ease;
         }
 
-        .video-overlay-hud {
-            position: absolute;
-            top: 12px; left: 12px; right: 12px;
-            display: flex;
-            justify-content: space-between;
+        .btn-primary:hover {
+            background: var(--accent-hover);
+        }
+
+        .btn-primary:active {
+            background: var(--accent-active);
+        }
+
+        .btn-primary:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
+        }
+
+        .btn-primary.recording {
+            background: var(--status-danger);
+            animation: pulse-border 1.5s infinite;
+        }
+
+        .btn-secondary {
+            display: inline-flex;
             align-items: center;
-            pointer-events: none;
+            justify-content: center;
+            gap: 6px;
+            background: var(--bg-subtle);
+            color: var(--text-primary);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 8px 14px;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease;
         }
 
-        .hud-status-badge {
-            background: rgba(15,23,42,0.85);
-            border: 1px solid rgba(6,182,212,0.4);
-            padding: 4px 10px;
-            border-radius: 6px;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            color: var(--accent-cyan);
-            backdrop-filter: blur(8px);
+        .btn-secondary:hover {
+            background: #e2e2e7;
+            border-color: var(--border-strong);
         }
 
-        .face-target-box {
-            position: absolute;
-            top: 20%; left: 30%; width: 40%; height: 60%;
-            border: 2px dashed rgba(6,182,212,0.6);
-            border-radius: 8px;
-            pointer-events: none;
-            box-shadow: 0 0 15px rgba(6,182,212,0.2) inset;
+        .btn-secondary:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
         }
 
-        @keyframes pulse-red {
-            0% { box-shadow: 0 0 0 0 rgba(220,38,38,0.7); }
-            70% { box-shadow: 0 0 0 10px rgba(220,38,38,0); }
-            100% { box-shadow: 0 0 0 0 rgba(220,38,38,0); }
-        }
-
-        /* ── VERDICT CARD ── */
-        .verdict-box {
+        /* ── Recording Timer & State ── */
+        .rec-timer {
+            display: none;
             text-align: center;
-            padding: 22px 16px;
-            border-radius: 14px;
-            background: rgba(15,23,42,0.6);
-            border: 1px solid rgba(255,255,255,0.08);
+            margin-top: 8px;
+            font-size: 0.85rem;
+            color: var(--status-danger);
+            font-family: var(--font-mono);
+            font-weight: 600;
+        }
+
+        /* ── Audio Player Native ── */
+        audio {
+            width: 100%;
+            height: 36px;
+            margin-top: 14px;
+            border-radius: var(--radius-sm);
+        }
+
+        /* ── Verdict Card & Status ── */
+        .verdict-banner {
+            border-radius: var(--radius-md);
+            padding: 16px;
             margin-bottom: 18px;
-            transition: all 0.4s ease;
+            border: 1px solid var(--border-subtle);
+            background: var(--bg-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        .verdict-box.state-authentic {
-            background: radial-gradient(circle at center, rgba(16,185,129,0.15) 0%, rgba(15,23,42,0.6) 100%);
-            border-color: var(--status-green);
-            box-shadow: 0 0 30px var(--status-green-glow);
+        .verdict-banner.safe {
+            background: var(--status-safe-bg);
+            border-color: var(--status-safe-border);
         }
 
-        .verdict-box.state-deepfake {
-            background: radial-gradient(circle at center, rgba(244,63,94,0.2) 0%, rgba(15,23,42,0.6) 100%);
-            border-color: var(--status-red);
-            box-shadow: 0 0 30px var(--status-red-glow);
+        .verdict-banner.fake {
+            background: var(--status-danger-bg);
+            border-color: var(--status-danger-border);
         }
 
-        .verdict-status { font-size: 1.6rem; font-weight: 800; letter-spacing: 0.5px; margin-bottom: 6px; }
-        .verdict-confidence { font-family: 'JetBrains Mono', monospace; font-size: 1rem; color: var(--text-secondary); }
+        .verdict-title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
 
-        .metrics-grid {
+        .verdict-banner.safe .verdict-title {
+            color: var(--status-safe);
+        }
+
+        .verdict-banner.fake .verdict-title {
+            color: var(--status-danger);
+        }
+
+        .verdict-sub {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+
+        .verdict-badge {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: var(--radius-sm);
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--text-primary);
+        }
+
+        .verdict-banner.safe .verdict-badge {
+            background: #dcfce7;
+            color: var(--status-safe);
+        }
+
+        .verdict-banner.fake .verdict-badge {
+            background: #fee2e2;
+            color: var(--status-danger);
+        }
+
+        /* ── Metric Grid ── */
+        .metric-row {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
+            gap: 12px;
             margin-bottom: 18px;
         }
 
-        .metric-item {
-            background: rgba(30,41,59,0.5);
-            padding: 10px;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.05);
+        .metric-box {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 12px;
             text-align: center;
+        }
+
+        .metric-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
         }
 
         .metric-value {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.05rem;
-            font-weight: 700;
-            color: var(--accent-cyan);
-            margin-top: 4px;
+            font-size: 1.35rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: var(--font-mono);
+            font-variant-numeric: tabular-nums;
         }
 
-        .metric-label { font-size: 0.72rem; color: var(--text-secondary); text-transform: uppercase; }
-
-        .spectrogram-container {
-            margin-top: 14px;
-            background: #040711;
-            border-radius: 10px;
-            padding: 10px;
-            border: 1px solid rgba(255,255,255,0.08);
+        /* ── Speech Transcript Box ── */
+        .section-box {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 14px;
+            margin-bottom: 16px;
         }
 
-        canvas { width: 100%; height: 80px; border-radius: 6px; display: block; }
-
-        /* ── SAFE WORD ── */
-        .safeword-banner {
-            display: none;
-            margin-top: 18px;
-            padding: 18px;
-            background: rgba(244,63,94,0.1);
-            border: 1px solid var(--status-red);
-            border-radius: 12px;
-            animation: fadeIn 0.3s ease;
-        }
-        .safeword-banner.show { display: block; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .safeword-input-row { display: flex; gap: 10px; margin-top: 12px; }
-
-        .safeword-input {
-            flex: 1;
-            background: rgba(15,23,42,0.8);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 8px;
-            padding: 10px 14px;
-            color: white;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.95rem;
-        }
-
-        .btn-verify {
-            background: var(--status-red);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            padding: 10px 18px;
-            font-weight: 700;
-            cursor: pointer;
-            font-family: inherit;
-        }
-        .btn-verify:hover { background: #e11d48; }
-        .safeword-result { margin-top: 10px; font-size: 0.88rem; font-weight: 600; }
-
-        audio {
-            width: 100%;
-            margin-top: 14px;
-            border-radius: 8px;
-            filter: invert(0.85) hue-rotate(180deg);
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 18px; height: 18px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top-color: white;
-            animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* ═══════════════════════════════════════════
-           LIVE CALL MONITOR STYLES
-        ═══════════════════════════════════════════ */
-
-        /* Big pulsing CALL button */
-        .call-intercept-btn {
-            width: 100%;
-            padding: 20px;
-            border-radius: 16px;
-            border: none;
-            font-family: inherit;
-            font-weight: 800;
-            font-size: 1.15rem;
-            cursor: pointer;
+        .section-header {
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: all 0.3s ease;
-            background: linear-gradient(135deg, #16a34a, #15803d);
-            color: white;
-            box-shadow: 0 4px 20px rgba(22,163,74,0.4);
-            letter-spacing: 0.3px;
+            justify-content: space-between;
+            margin-bottom: 8px;
         }
 
-        .call-intercept-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 28px rgba(22,163,74,0.5);
+        .section-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: var(--text-secondary);
         }
 
-        .call-intercept-btn.monitoring {
-            background: linear-gradient(135deg, #dc2626, #9333ea);
-            box-shadow: 0 4px 20px rgba(220,38,38,0.5);
-            animation: call-pulse 1.5s infinite;
-        }
-
-        @keyframes call-pulse {
-            0%, 100% { box-shadow: 0 4px 20px rgba(220,38,38,0.5); }
-            50% { box-shadow: 0 4px 32px rgba(220,38,38,0.85), 0 0 0 8px rgba(220,38,38,0.1); }
-        }
-
-        /* Countdown ring */
-        .chunk-timer-row {
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin-top: 16px;
-            padding: 14px 16px;
-            background: rgba(15,23,42,0.6);
-            border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.07);
-        }
-
-        .chunk-ring {
-            position: relative;
-            width: 48px; height: 48px;
-            flex-shrink: 0;
-        }
-
-        .chunk-ring svg { transform: rotate(-90deg); }
-
-        .chunk-ring-bg { stroke: rgba(255,255,255,0.08); fill: none; stroke-width: 4; }
-        .chunk-ring-fill { stroke: var(--accent-cyan); fill: none; stroke-width: 4; stroke-linecap: round; transition: stroke-dashoffset 0.5s linear; }
-
-        .chunk-ring-label {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: var(--accent-cyan);
-        }
-
-        .chunk-info { flex: 1; }
-        .chunk-info-title { font-weight: 700; font-size: 0.95rem; margin-bottom: 2px; }
-        .chunk-info-sub { font-size: 0.8rem; color: var(--text-secondary); }
-
-        /* Live verdict badge */
-        .live-verdict-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 14px;
-            border-radius: 9999px;
-            font-weight: 700;
+        .section-content {
             font-size: 0.9rem;
-            background: rgba(30,41,59,0.6);
-            border: 1px solid rgba(255,255,255,0.1);
-            transition: all 0.4s ease;
+            color: var(--text-primary);
+            line-height: 1.5;
+            min-height: 22px;
         }
 
-        .live-verdict-badge.safe {
-            background: rgba(16,185,129,0.15);
-            border-color: var(--status-green);
-            color: #34d399;
-            box-shadow: 0 0 12px rgba(16,185,129,0.3);
+        .section-content.placeholder {
+            color: var(--text-tertiary);
+            font-style: italic;
         }
 
-        .live-verdict-badge.danger {
-            background: rgba(244,63,94,0.15);
-            border-color: var(--status-red);
-            color: #fb7185;
-            box-shadow: 0 0 12px rgba(244,63,94,0.3);
-            animation: badge-flicker 0.6s infinite alternate;
+        /* ── Fraud Assessment Box ── */
+        .fraud-alert-box {
+            display: none;
+            border-radius: var(--radius-md);
+            padding: 14px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border-subtle);
+            background: var(--bg-subtle);
         }
 
-        @keyframes badge-flicker {
-            from { opacity: 1; }
-            to { opacity: 0.7; }
+        .fraud-alert-box.active {
+            display: block;
         }
 
-        /* Threat timeline chart */
-        .timeline-card {
+        .fraud-alert-box.high-risk {
+            background: var(--status-danger-bg);
+            border-color: var(--status-danger-border);
+        }
+
+        .fraud-alert-box.moderate-risk {
+            background: var(--status-warning-bg);
+            border-color: var(--status-warning-border);
+        }
+
+        .fraud-alert-box.safe-risk {
+            background: var(--status-safe-bg);
+            border-color: var(--status-safe-border);
+        }
+
+        .fraud-tag-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin: 8px 0;
+        }
+
+        .tag-pill {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            padding: 2px 7px;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.06);
+            color: var(--text-primary);
+        }
+
+        .tag-pill.urgency {
+            background: #fed7aa;
+            color: #9a3412;
+        }
+
+        /* ── Acoustic Forensics Strip ── */
+        .forensics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .forensic-cell {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-sm);
+            padding: 8px;
+            text-align: center;
+        }
+
+        .forensic-name {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-bottom: 2px;
+        }
+
+        .forensic-val {
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* ── Spectrogram Canvas ── */
+        .canvas-container {
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            border: 1px solid var(--border-subtle);
+            background: #111113;
+            margin-bottom: 16px;
+        }
+
+        #specCanvas {
+            width: 100%;
+            height: 70px;
+            display: block;
+        }
+
+        /* ── Family Safe-Word Protocol ── */
+        .safeword-box {
+            display: none;
+            background: var(--status-danger-bg);
+            border: 1px solid var(--status-danger-border);
+            border-radius: var(--radius-md);
+            padding: 16px;
+        }
+
+        .safeword-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--status-danger);
+            margin-bottom: 6px;
+        }
+
+        .safeword-desc {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            margin-bottom: 12px;
+            line-height: 1.4;
+        }
+
+        .safeword-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .text-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 0.85rem;
+            background: #ffffff;
+            color: var(--text-primary);
+        }
+
+        .text-input:focus-visible {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: var(--focus-ring);
+        }
+
+        /* ── Skeleton Loading State ── */
+        .skeleton {
+            background: linear-gradient(90deg, #ececf0 25%, #f5f5f7 37%, #ececf0 63%);
+            background-size: 400% 100%;
+            animation: skeleton-shimmer 1.4s ease infinite;
+            border-radius: 4px;
+        }
+
+        @keyframes skeleton-shimmer {
+            0% { background-position: 100% 50%; }
+            100% { background-position: 0 50%; }
+        }
+
+        /* ── Video Mode View ── */
+        #video-mode-view {
+            display: none;
+        }
+
+        .video-wrapper {
             position: relative;
+            width: 100%;
+            height: 240px;
+            background: #111113;
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+
+        #live-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .hud-badge {
+            background: rgba(0, 0, 0, 0.65);
+            color: #ffffff;
+            font-size: 0.7rem;
+            font-family: var(--font-mono);
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        /* ── Live Call Monitor View ── */
+        #call-monitor-wrapper {
+            display: none;
+        }
+
+        .monitor-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+
+        .step-list {
+            list-style: none;
+            counter-reset: steps;
+            margin: 14px 0 20px;
+        }
+
+        .step-item {
+            counter-increment: steps;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 0.88rem;
+            color: var(--text-secondary);
+        }
+
+        .step-item::before {
+            content: counter(steps);
+            flex-shrink: 0;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .timeline-box {
+            background: #111113;
+            border-radius: var(--radius-md);
+            padding: 12px;
+            margin-top: 12px;
         }
 
         #threatCanvas {
             width: 100%;
             height: 110px;
-            border-radius: 8px;
             display: block;
         }
 
-        .timeline-labels {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 6px;
-        }
-
-        .timeline-labels span {
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        /* Scan history log */
-        .scan-log {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-            max-height: 220px;
-            overflow-y: auto;
-            padding-right: 4px;
-        }
-
-        .scan-log::-webkit-scrollbar { width: 4px; }
-        .scan-log::-webkit-scrollbar-track { background: transparent; }
-        .scan-log::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
-
-        .scan-entry {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 10px 12px;
-            border-radius: 8px;
-            background: rgba(15,23,42,0.5);
-            border: 1px solid rgba(255,255,255,0.05);
-            font-size: 0.82rem;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-10px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-
-        .scan-entry.real { border-left: 3px solid var(--status-green); }
-        .scan-entry.fake { border-left: 3px solid var(--status-red); }
-        .scan-entry.scanning { border-left: 3px solid var(--accent-cyan); opacity: 0.7; }
-
-        .scan-entry-icon { font-size: 1rem; flex-shrink: 0; }
-        .scan-entry-info { flex: 1; }
-        .scan-entry-verdict { font-weight: 700; }
-        .scan-entry-meta { color: var(--text-secondary); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }
-        .scan-entry-score { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
-
-        /* Alarm overlay */
-        .alarm-overlay {
+        /* ── Fraud Dashboard View ── */
+        #scam-dashboard-wrapper {
             display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(220, 38, 38, 0.15);
-            border: 4px solid var(--status-red);
-            pointer-events: none;
-            z-index: 999;
-            animation: alarm-flash 0.5s infinite alternate;
-        }
-
-        .alarm-overlay.active { display: block; }
-
-        @keyframes alarm-flash {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        /* Instruction steps */
-        .steps-list {
-            display: flex;
             flex-direction: column;
-            gap: 10px;
-            margin-bottom: 18px;
+            gap: 24px;
         }
 
-        .step-row {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            padding: 12px;
-            background: rgba(15,23,42,0.5);
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .step-num {
-            width: 26px; height: 26px;
-            border-radius: 50%;
-            background: rgba(6,182,212,0.2);
-            border: 1px solid var(--accent-cyan);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.82rem;
-            color: var(--accent-cyan);
-            flex-shrink: 0;
-        }
-
-        .step-text { font-size: 0.88rem; line-height: 1.4; color: var(--text-secondary); }
-        .step-text strong { color: var(--text-primary); }
-
-        /* Stats row */
-        .call-stats-row {
+        .kpi-row {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-            margin-bottom: 16px;
+            gap: 16px;
         }
 
-        @media (max-width: 600px) {
-            .call-stats-row { grid-template-columns: repeat(2, 1fr); }
+        .kpi-card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 18px 16px;
+            box-shadow: var(--shadow-card);
         }
 
-        .stat-box {
-            background: rgba(15,23,42,0.6);
-            border: 1px solid rgba(255,255,255,0.07);
-            border-radius: 10px;
-            padding: 12px;
-            text-align: center;
+        .kpi-label {
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: var(--text-secondary);
+            margin-bottom: 6px;
         }
 
-        .stat-box-val {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 1.3rem;
-            font-weight: 700;
-            color: var(--accent-cyan);
+        .kpi-value {
+            font-size: 1.8rem;
+            font-weight: 600;
+            font-family: var(--font-mono);
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
         }
 
-        .stat-box-label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; margin-top: 2px; }
+        .kpi-sub {
+            font-size: 0.78rem;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+        }
 
-        /* Sensitivity slider */
-        .sensitivity-row {
+        /* ── Audit Table ── */
+        .table-container {
+            overflow-x: auto;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            background: var(--bg-surface);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            text-align: left;
+        }
+
+        th {
+            background: var(--bg-subtle);
+            color: var(--text-secondary);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            padding: 10px 14px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        td {
+            padding: 12px 14px;
+            border-bottom: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            vertical-align: middle;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover td {
+            background: #fafafc;
+        }
+
+        /* ── Sandbox Grid ── */
+        .sandbox-box {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .preset-chip-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 12px 0 16px;
+        }
+
+        .preset-chip {
+            background: var(--bg-subtle);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            font-family: inherit;
+            font-size: 0.8rem;
+            padding: 6px 12px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+
+        .preset-chip:hover {
+            background: var(--bg-secondary);
+            border-color: var(--border-strong);
+        }
+
+        .preset-chip:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-ring);
+        }
+
+        /* ── Detail Modal ── */
+        .modal-backdrop {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.45);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-card {
+            background: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            max-width: 600px;
+            width: 100%;
+            max-height: 85vh;
+            overflow-y: auto;
+            padding: 28px;
+            box-shadow: var(--shadow-elevated);
+            border: 1px solid var(--border-subtle);
+        }
+
+        /* ── Data Governance Section ── */
+        .governance-section {
+            margin-top: 64px;
+            border-top: 1px solid var(--border-subtle);
+            padding-top: 48px;
+        }
+
+        .governance-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            margin-top: 24px;
+        }
+
+        .governance-item h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .governance-item p {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* ── Site Footer ── */
+        .site-footer {
+            margin-top: 64px;
+            border-top: 1px solid var(--border-subtle);
+            padding-top: 28px;
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-top: 12px;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-tertiary);
         }
 
-        .sensitivity-row label { font-size: 0.82rem; color: var(--text-secondary); white-space: nowrap; }
-
-        input[type=range] {
-            flex: 1;
-            -webkit-appearance: none;
-            height: 4px;
-            border-radius: 2px;
-            background: rgba(255,255,255,0.1);
-            outline: none;
+        .footer-links {
+            display: flex;
+            gap: 18px;
         }
 
-        input[type=range]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 16px; height: 16px;
-            border-radius: 50%;
-            background: var(--accent-cyan);
-            cursor: pointer;
-        }
-
-        .sensitivity-val {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.82rem;
-            color: var(--accent-cyan);
-            min-width: 36px;
-        }
-
-        /* Empty log placeholder */
-        .log-empty {
-            text-align: center;
-            padding: 24px;
+        .footer-links a {
             color: var(--text-secondary);
-            font-size: 0.85rem;
+            text-decoration: none;
+        }
+
+        .footer-links a:hover {
+            color: var(--text-primary);
+            text-decoration: underline;
+        }
+
+        /* ── Accessibility & Reduced Motion ── */
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+
+        /* ── Responsive Adaptations ── */
+        @media (max-width: 820px) {
+            .product-grid {
+                grid-template-columns: 1fr;
+            }
+            .monitor-grid {
+                grid-template-columns: 1fr;
+            }
+            .kpi-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .governance-grid {
+                grid-template-columns: 1fr;
+            }
+            .site-footer {
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+            }
+            .nav-links {
+                display: none;
+            }
         }
     </style>
 </head>
 <body>
 
-    <!-- Alarm Overlay (full-screen red flash) -->
-    <div class="alarm-overlay" id="alarm-overlay"></div>
-
-    <div class="header">
-        <div class="shield-badge">
-            <span class="pulse-dot"></span>
-            Wav2Vec2 Neural Audio Sentinel Active
+    <!-- Top Navigation -->
+    <header class="site-nav">
+        <div class="nav-inner">
+            <a href="/" class="nav-brand">
+                <span class="status-dot" aria-hidden="true"></span>
+                <span>Voice Clone Shield</span>
+            </a>
+            <nav aria-label="Main Navigation">
+                <ul class="nav-links">
+                    <li><a href="#detector" class="nav-link" onclick="switchMode('audio')">File Analysis</a></li>
+                    <li><a href="#monitor" class="nav-link" onclick="switchMode('call')">Live Monitor</a></li>
+                    <li><a href="#audit" class="nav-link" onclick="switchMode('scam')">Fraud Audit</a></li>
+                    <li><a href="/privacy" class="nav-link">Privacy Policy</a></li>
+                    <li><a href="/terms" class="nav-link">Terms</a></li>
+                </ul>
+            </nav>
         </div>
-        <h1>Voice Clone Shield</h1>
-        <p class="subtitle">Real-time deepfake voice detector · Live call monitoring · Family safe-word protocol</p>
-    </div>
+    </header>
 
-    <!-- Mode Tabs -->
-    <div class="mode-tabs">
-        <button class="mode-tab active" id="tab-audio" onclick="switchMode('audio')">
-            🎙️ Audio Scan
-        </button>
-        <button class="mode-tab" id="tab-video" onclick="switchMode('video')">
-            📹 Video Intercept
-        </button>
-        <button class="mode-tab call-tab" id="tab-call" onclick="switchMode('call')">
-            📞 Live Call Monitor
-        </button>
-    </div>
+    <main class="page-container">
 
-    <!-- ───── AUDIO + VIDEO GRID ───── -->
-    <div class="dashboard-grid" id="main-grid">
-        <!-- Input Panel -->
-        <div class="card">
-            <div class="card-title">
-                <span id="panel-title">Audio Feed Input</span>
-                <span id="panel-sub" style="font-size:0.8rem;color:var(--text-secondary);">16kHz Audio Stream</span>
-            </div>
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-tagline">Acoustic Biometric Verification</div>
+            <h1>Real-time synthetic speech and fraud verification.</h1>
+            <p>Analyze incoming calls, audio files, and video streams for biometric synthesis anomalies and conversational fraud patterns using local acoustic modeling and speech recognition.</p>
+        </section>
 
-            <!-- AUDIO MODE -->
-            <div id="audio-mode-view">
-                <p style="font-size:0.88rem;color:var(--text-secondary);margin-bottom:12px;">Quick Test Scenarios (1-Click Run):</p>
-                <div class="preset-buttons">
-                    <button class="btn-preset real" id="btn-sample-real" onclick="testPreset('sample_real_human.wav')">
-                        <div>
-                            <div style="font-weight:700;">Authentic Human Speech</div>
-                            <div style="font-size:0.8rem;color:var(--text-secondary);">Natural voice cadence with biological acoustics</div>
-                        </div>
-                        <span class="tag tag-real">Human</span>
-                    </button>
-                    <button class="btn-preset fake" id="btn-sample-fake" onclick="testPreset('sample_ai_clone.wav')">
-                        <div>
-                            <div style="font-weight:700;">AI Cloned Scam Call</div>
-                            <div style="font-size:0.8rem;color:var(--text-secondary);">Emergency extortion bait — neural TTS synthetic voice</div>
-                        </div>
-                        <span class="tag tag-fake">AI Clone</span>
-                    </button>
+        <!-- Mode Segmented Control -->
+        <div class="segmented-controls" role="tablist" aria-label="Verification Mode">
+            <button class="segment-btn active" id="tab-audio" role="tab" aria-selected="true" onclick="switchMode('audio')">File Analysis</button>
+            <button class="segment-btn" id="tab-video" role="tab" aria-selected="false" onclick="switchMode('video')">Video Intercept</button>
+            <button class="segment-btn" id="tab-call" role="tab" aria-selected="false" onclick="switchMode('call')">Live Call Monitor</button>
+            <button class="segment-btn" id="tab-scam" role="tab" aria-selected="false" onclick="switchMode('scam')">Fraud Audit</button>
+        </div>
+
+        <!-- ──────────────────────────────────────────
+             AUDIO & VIDEO DETECTOR (MAIN PRODUCT VIEW)
+        ────────────────────────────────────────── -->
+        <div class="product-grid" id="main-grid">
+
+            <!-- Input Panel -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title" id="panel-title">Audio Input</span>
+                    <span class="card-meta" id="panel-sub">16kHz PCM Stream</span>
                 </div>
 
-                <div class="upload-zone" onclick="document.getElementById('file-input').click()">
-                    <div style="font-size:1.8rem;margin-bottom:4px;">📂</div>
-                    <div style="font-weight:600;">Click to upload audio or video file</div>
-                    <div style="font-size:0.8rem;color:var(--text-secondary);margin-top:4px;">WAV, MP3, MP4, WebM</div>
-                    <input type="file" id="file-input" accept="audio/*,video/*" style="display:none;" onchange="handleFileUpload(event)">
-                </div>
+                <!-- AUDIO MODE VIEW -->
+                <div id="audio-mode-view">
+                    <!-- Dropzone -->
+                    <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload audio or video file" onclick="document.getElementById('file-input').click()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();document.getElementById('file-input').click();}">
+                        <svg class="dropzone-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                            <polyline points="17 8 12 3 7 8"></polyline>
+                            <line x1="12" y1="3" x2="12" y2="15"></line>
+                        </svg>
+                        <div class="dropzone-title">Upload audio or video file</div>
+                        <div class="dropzone-sub">WAV, MP3, MP4, WebM &middot; Drag and drop or browse</div>
+                        <input type="file" id="file-input" accept="audio/*,video/*" style="display:none;" onchange="handleFileUpload(event)">
+                    </div>
 
-                <div class="record-controls">
-                    <button class="btn-action btn-mic" id="btn-record" onclick="toggleAudioRecording()">
-                        <span id="mic-icon">🎙️</span>
+                    <!-- Microphone Recording Button -->
+                    <button class="btn-primary" id="btn-record" onclick="toggleAudioRecording()">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            <line x1="12" y1="19" x2="12" y2="23"></line>
+                            <line x1="8" y1="23" x2="16" y2="23"></line>
+                        </svg>
                         <span id="mic-text">Record Voice Live</span>
                     </button>
+                    <div class="rec-timer" id="rec-timer">Recording 00:00</div>
                 </div>
-            </div>
 
-            <!-- VIDEO MODE -->
-            <div id="video-mode-view" style="display:none;">
-                <div class="video-box-container active">
-                    <video id="live-video" autoplay playsinline muted></video>
-                    <div class="video-overlay-hud">
-                        <div class="hud-status-badge">
-                            <span class="pulse-dot" style="display:inline-block;margin-right:4px;"></span>
-                            <span id="video-hud-text">CAM STANDBY</span>
+                <!-- VIDEO MODE VIEW -->
+                <div id="video-mode-view">
+                    <div class="video-wrapper">
+                        <video id="live-video" autoplay playsinline muted></video>
+                        <div class="video-hud">
+                            <span class="hud-badge" id="video-hud-text">Camera Standby</span>
                         </div>
-                        <div class="hud-status-badge" style="color:#f59e0b;">FACIAL TRACK: LOCKED</div>
                     </div>
-                    <div class="face-target-box"></div>
+                    <div style="display:flex;gap:10px;">
+                        <button class="btn-secondary" id="btn-cam-toggle" onclick="toggleCameraStream()" style="flex:1;">Enable Camera</button>
+                        <button class="btn-primary" id="btn-record-video" onclick="toggleVideoRecording()" disabled style="flex:1;">Record Stream</button>
+                    </div>
                 </div>
 
-                <div class="record-controls">
-                    <button class="btn-action" style="background:#0f766e;color:white;" id="btn-cam-toggle" onclick="toggleCameraStream()">
-                        <span>📷</span> Enable Camera
-                    </button>
-                    <button class="btn-action btn-mic" id="btn-record-video" onclick="toggleVideoRecording()" disabled>
-                        <span id="rec-video-icon">⏺️</span>
-                        <span id="rec-video-text">Record Video Call</span>
-                    </button>
-                </div>
+                <!-- Native Player -->
+                <audio id="audio-player" controls style="display:none;"></audio>
             </div>
 
-            <audio id="audio-player" controls style="display:none;"></audio>
+            <!-- Forensic Results Panel -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Forensic Assessment</span>
+                    <span class="card-meta" id="status-pill">Ready</span>
+                </div>
+
+                <!-- Verdict Banner -->
+                <div class="verdict-banner" id="verdict-card">
+                    <div>
+                        <div class="verdict-title" id="verdict-text">Awaiting Audio Stream</div>
+                        <div class="verdict-sub" id="verdict-conf">Upload a recording or speak into the microphone</div>
+                    </div>
+                    <div class="verdict-badge" id="verdict-score-badge">Idle</div>
+                </div>
+
+                <!-- Metrics Row -->
+                <div class="metric-row">
+                    <div class="metric-box">
+                        <div class="metric-label">Spoof Risk</div>
+                        <div class="metric-value" id="threat-score">--</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Latency</div>
+                        <div class="metric-value" id="latency-val">--</div>
+                    </div>
+                    <div class="metric-box">
+                        <div class="metric-label">Duration</div>
+                        <div class="metric-value" id="duration-val">--</div>
+                    </div>
+                </div>
+
+                <!-- Live Transcript (faster-whisper) -->
+                <div class="section-box">
+                    <div class="section-header">
+                        <span class="section-label">Speech Transcript (faster-whisper)</span>
+                        <span id="safeword-badge" style="display:none;font-size:0.7rem;font-weight:600;color:var(--status-safe);background:#dcfce7;padding:2px 6px;border-radius:4px;">Safe-Word Spoken</span>
+                    </div>
+                    <div class="section-content placeholder" id="transcript-display">Awaiting transcribed speech...</div>
+                </div>
+
+                <!-- Real-Time NLP Fraud Assessment Box -->
+                <div class="fraud-alert-box" id="scam-result-box">
+                    <div class="section-header">
+                        <span class="section-label" style="color:inherit;">Conversational Intent Assessment</span>
+                        <span id="scam-risk-badge" class="verdict-badge">Safe</span>
+                    </div>
+                    <div id="scam-category-text" style="font-weight:600;font-size:0.9rem;margin-bottom:4px;">No fraud detected</div>
+                    <div id="scam-explanation-text" style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:8px;line-height:1.4;"></div>
+                    <div id="scam-keywords-container" class="fraud-tag-group"></div>
+                    <div id="scam-advisory-box" style="display:none;font-size:0.8rem;padding:8px 10px;border-radius:6px;background:rgba(0,0,0,0.05);line-height:1.4;margin-top:8px;"></div>
+                </div>
+
+                <!-- Librosa Acoustic Forensics Strip -->
+                <div class="forensics-grid">
+                    <div class="forensic-cell">
+                        <div class="forensic-name">Pitch (F0)</div>
+                        <div class="forensic-val" id="f0-val">--</div>
+                    </div>
+                    <div class="forensic-cell">
+                        <div class="forensic-name">Centroid</div>
+                        <div class="forensic-val" id="centroid-val">--</div>
+                    </div>
+                    <div class="forensic-cell">
+                        <div class="forensic-name">Flatness</div>
+                        <div class="forensic-val" id="flatness-val">--</div>
+                    </div>
+                    <div class="forensic-cell">
+                        <div class="forensic-name">Rolloff</div>
+                        <div class="forensic-val" id="rolloff-val">--</div>
+                    </div>
+                </div>
+
+                <!-- Spectrogram Matrix Canvas -->
+                <div class="canvas-container">
+                    <canvas id="specCanvas"></canvas>
+                </div>
+
+                <!-- Safe-Word Challenge Banner -->
+                <div class="safeword-box" id="safeword-banner">
+                    <div class="safeword-title">Emergency Protocol: Suspected Voice Clone</div>
+                    <p class="safeword-desc">The caller failed voice authenticity checks. Verify caller identity using your pre-shared family safe phrase.</p>
+                    <div class="safeword-row">
+                        <label for="safeword-input" class="visually-hidden" style="display:none;">Safe Word</label>
+                        <input type="text" class="text-input" id="safeword-input" placeholder="Enter safe-word (Hint: SUPERNOVA-42)">
+                        <button class="btn-secondary" onclick="verifySafeWord()">Verify</button>
+                    </div>
+                    <div id="safeword-result" style="margin-top:8px;font-size:0.85rem;font-weight:500;"></div>
+                </div>
+
+            </div>
         </div>
 
-        <!-- Verdict Panel -->
-        <div class="card">
-            <div class="card-title">
-                <span>Forensic Classification</span>
-                <span id="status-pill" style="font-size:0.8rem;color:var(--text-secondary);">Ready</span>
-            </div>
+        <!-- ──────────────────────────────────────────
+             LIVE CALL MONITOR TAB
+        ────────────────────────────────────────── -->
+        <div id="call-monitor-wrapper">
+            <div class="monitor-grid">
+                <!-- Left: Setup & Controls -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Live Call Intercept Setup</span>
+                        <span class="card-meta" id="live-badge">Idle</span>
+                    </div>
 
-            <div class="verdict-box" id="verdict-card">
-                <div style="font-size:2.2rem;margin-bottom:4px;" id="verdict-icon">🛡️</div>
-                <div class="verdict-status" id="verdict-text">Awaiting Audio / Video</div>
-                <div class="verdict-confidence" id="verdict-conf">Select a sample or record live stream</div>
-            </div>
+                    <ol class="step-list">
+                        <li class="step-item">Receive the incoming call on your telephone device.</li>
+                        <li class="step-item">Activate speakerphone mode so audio plays aloud.</li>
+                        <li class="step-item">Click Start Monitoring below. Microphone buffers incoming speech.</li>
+                        <li class="step-item">Results update every 4 seconds with rolling biometric analysis.</li>
+                    </ol>
 
-            <div class="metrics-grid">
-                <div class="metric-item">
-                    <div class="metric-label">Spoof Risk</div>
-                    <div class="metric-value" id="threat-score">--</div>
-                </div>
-                <div class="metric-item">
-                    <div class="metric-label">Inference Latency</div>
-                    <div class="metric-value" id="latency-val">--</div>
-                </div>
-                <div class="metric-item">
-                    <div class="metric-label">Duration</div>
-                    <div class="metric-value" id="duration-val">--</div>
-                </div>
-            </div>
+                    <button class="btn-primary" id="call-btn" onclick="toggleCallMonitor()">
+                        <span id="call-btn-text">Start Call Monitoring</span>
+                    </button>
 
-            <!-- Speech-to-Text Transcript (faster-whisper) -->
-            <div style="margin-top:14px;background:rgba(2,6,23,0.7);border:1px solid rgba(255,255,255,0.08);border-radius:10px;padding:12px;">
-                <div style="font-size:0.75rem;color:var(--text-secondary);display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-weight:600;letter-spacing:0.5px;">
-                    <span>🎙️ LIVE TRANSCRIPT (faster-whisper)</span>
-                    <span id="safeword-badge" style="display:none;background:rgba(16,185,129,0.2);color:var(--status-green);padding:2px 8px;border-radius:12px;font-size:0.7rem;border:1px solid var(--status-green);font-weight:700;">SAFEWORD SPOKEN</span>
+                    <div id="chunk-timer-row" style="display:none;margin-top:14px;font-size:0.82rem;color:var(--text-secondary);text-align:center;">
+                        Next sample analysis in <span id="ring-countdown" style="font-weight:600;color:var(--text-primary);">4</span>s
+                    </div>
                 </div>
-                <div id="transcript-display" style="font-size:0.88rem;color:#f1f5f9;font-style:italic;min-height:22px;line-height:1.4;">
-                    Awaiting audio speech input...
-                </div>
-            </div>
 
-            <!-- Librosa Acoustic Forensics Strip -->
-            <div style="margin-top:12px;display:grid;grid-template-columns:repeat(4, 1fr);gap:8px;">
-                <div style="background:rgba(15,23,42,0.6);padding:8px 6px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);text-align:center;">
-                    <div style="color:var(--text-secondary);font-size:0.68rem;text-transform:uppercase;">Pitch (F0)</div>
-                    <div id="f0-val" style="color:var(--accent-cyan);font-weight:700;font-size:0.9rem;margin-top:2px;">--</div>
-                </div>
-                <div style="background:rgba(15,23,42,0.6);padding:8px 6px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);text-align:center;">
-                    <div style="color:var(--text-secondary);font-size:0.68rem;text-transform:uppercase;">Centroid</div>
-                    <div id="centroid-val" style="color:#a855f7;font-weight:700;font-size:0.9rem;margin-top:2px;">--</div>
-                </div>
-                <div style="background:rgba(15,23,42,0.6);padding:8px 6px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);text-align:center;">
-                    <div style="color:var(--text-secondary);font-size:0.68rem;text-transform:uppercase;">Flatness</div>
-                    <div id="flatness-val" style="color:#eab308;font-weight:700;font-size:0.9rem;margin-top:2px;">--</div>
-                </div>
-                <div style="background:rgba(15,23,42,0.6);padding:8px 6px;border-radius:8px;border:1px solid rgba(255,255,255,0.06);text-align:center;">
-                    <div style="color:var(--text-secondary);font-size:0.68rem;text-transform:uppercase;">Rolloff</div>
-                    <div id="rolloff-val" style="color:#38bdf8;font-weight:700;font-size:0.9rem;margin-top:2px;">--</div>
+                <!-- Right: Timeline Chart -->
+                <div class="card">
+                    <div class="card-header">
+                        <span class="card-title">Rolling Threat Timeline</span>
+                        <span class="card-meta" id="stat-peak">Peak Threat: 0%</span>
+                    </div>
+
+                    <div class="timeline-box">
+                        <canvas id="threatCanvas"></canvas>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;font-size:0.75rem;color:var(--text-tertiary);margin-top:6px;">
+                        <span>Earlier</span>
+                        <span style="color:var(--status-danger);">Synthetic Threshold (70%)</span>
+                        <span>Latest</span>
+                    </div>
                 </div>
             </div>
 
-            <div class="spectrogram-container" style="margin-top:14px;">
-                <div style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:6px;display:flex;justify-content:space-between;">
-                    <span>ACOUSTIC SPECTRAL MATRIX</span>
-                    <span id="spec-status">Idle</span>
+            <!-- Scan Log -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Forensic Scan Log</span>
+                    <button class="btn-secondary" onclick="clearScanLog()" style="padding:4px 10px;font-size:0.75rem;">Clear Log</button>
                 </div>
-                <canvas id="specCanvas"></canvas>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Verdict</th>
+                                <th>Confidence</th>
+                                <th>Acoustic Markers</th>
+                            </tr>
+                        </thead>
+                        <tbody id="scan-log-body">
+                            <tr>
+                                <td colspan="4" style="text-align:center;color:var(--text-tertiary);padding:24px;">No scan intervals recorded yet.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ──────────────────────────────────────────
+             FRAUD AUDIT DASHBOARD TAB
+        ────────────────────────────────────────── -->
+        <div id="scam-dashboard-wrapper">
+            <!-- 4 KPI Cards -->
+            <div class="kpi-row">
+                <div class="kpi-card">
+                    <div class="kpi-label">Total Inspected Calls</div>
+                    <div class="kpi-value" id="kpi-total">0</div>
+                    <div class="kpi-sub">Logged in local SQLite database</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Synthetic Clones Flagged</div>
+                    <div class="kpi-value" id="kpi-clones" style="color:var(--status-danger);">0</div>
+                    <div class="kpi-sub">Wav2Vec2 neural detection</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Fraud Intent Attempts</div>
+                    <div class="kpi-value" id="kpi-scams" style="color:var(--status-warning);">0</div>
+                    <div class="kpi-sub">NLP intent pattern matches</div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-label">Verified Safe Sessions</div>
+                    <div class="kpi-value" id="kpi-safe" style="color:var(--status-safe);">0</div>
+                    <div class="kpi-sub">Biological acoustic profile</div>
+                </div>
             </div>
 
-            <!-- Safe-Word Banner -->
-            <div class="safeword-banner" id="safeword-banner">
-                <div style="display:flex;align-items:center;gap:8px;font-weight:800;color:var(--status-red);font-size:1.05rem;">
-                    <span>⚠️</span> EMERGENCY PROTOCOL: SUSPECTED CLONE
+            <!-- Audit Trail Table -->
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Incident Audit History</span>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn-secondary active" id="filter-all" onclick="filterCalls('all')">All</button>
+                        <button class="btn-secondary" id="filter-flagged" onclick="filterCalls('flagged')">Flagged</button>
+                        <button class="btn-secondary" id="filter-safe" onclick="filterCalls('safe')">Safe</button>
+                        <button class="btn-secondary" onclick="clearCallHistory()" style="color:var(--status-danger);">Wipe History</button>
+                    </div>
                 </div>
-                <p style="font-size:0.85rem;color:#cbd5e1;margin-top:6px;">
-                    Caller failed voice authenticity. Automated family lockdown engaged. Verify identity with pre-shared family safe-word:
-                </p>
-                <div class="safeword-input-row">
-                    <input type="text" class="safeword-input" id="safeword-input" placeholder="Enter Safe-Word (Hint: SUPERNOVA-42)">
-                    <button class="btn-verify" onclick="verifySafeWord()">Verify Word</button>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Composite Verdict</th>
+                                <th>Deepfake %</th>
+                                <th>Scam %</th>
+                                <th>Fraud Category</th>
+                                <th>Transcript</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="calls-table-body">
+                            <tr>
+                                <td colspan="7" style="text-align:center;padding:24px;color:var(--text-tertiary);">Loading audit records...</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
-                <div class="safeword-result" id="safeword-result"></div>
             </div>
+
+            <!-- Multilingual NLP Sandbox -->
+            <div class="sandbox-box">
+                <div class="card-header" style="padding-bottom:10px;margin-bottom:12px;">
+                    <div>
+                        <div class="card-title">Multilingual Linguistic Evaluation Sandbox</div>
+                        <div class="card-meta" style="margin-top:2px;">Evaluate conversational fraud intent across regional dialects and extortion typologies.</div>
+                    </div>
+                </div>
+
+                <div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:6px;">Select representative test scenario:</div>
+                <div class="preset-chip-group">
+                    <button class="preset-chip" onclick="fillSandbox('hi_otp')">Hindi Bank OTP Phishing</button>
+                    <button class="preset-chip" onclick="fillSandbox('hi_arrest')">Hindi Police Arrest Threat</button>
+                    <button class="preset-chip" onclick="fillSandbox('en_bail')">English Bail Bond Scam</button>
+                    <button class="preset-chip" onclick="fillSandbox('en_lottery')">English Lottery Prize Claim</button>
+                    <button class="preset-chip" onclick="fillSandbox('benign')">Benign Family Conversation</button>
+                </div>
+
+                <div style="display:flex;gap:12px;margin-bottom:12px;">
+                    <div style="flex:1;">
+                        <label for="sandbox-input" class="visually-hidden" style="display:none;">Test Script</label>
+                        <textarea id="sandbox-input" class="text-input" style="width:100%;height:80px;resize:vertical;" placeholder="Enter conversational text snippet to evaluate..."></textarea>
+                    </div>
+                    <div style="width:160px;display:flex;flex-direction:column;gap:8px;">
+                        <label for="sandbox-lang" style="font-size:0.75rem;font-weight:500;color:var(--text-secondary);">Language</label>
+                        <select id="sandbox-lang" class="text-input" style="padding:6px 8px;">
+                            <option value="auto">Auto Detect</option>
+                            <option value="en">English</option>
+                            <option value="hi">Hindi</option>
+                            <option value="es">Spanish</option>
+                        </select>
+                        <button class="btn-primary" onclick="runSandboxTest()" style="padding:8px 12px;font-size:0.85rem;">Run Analysis</button>
+                    </div>
+                </div>
+
+                <div id="sandbox-output" class="section-box" style="display:none;background:var(--bg-subtle);"></div>
+            </div>
+        </div>
+
+        <!-- ──────────────────────────────────────────
+             DATA GOVERNANCE & PRIVACY
+        ────────────────────────────────────────── -->
+        <section class="governance-section" id="data-practices">
+            <div class="hero-tagline">Architectural Principles</div>
+            <h2 style="font-size:1.5rem;font-weight:600;letter-spacing:-0.02em;margin-bottom:8px;">Data Protection and Privacy</h2>
+            <p style="color:var(--text-secondary);max-width:700px;">Voice Clone Shield is engineered with local-first processing principles to ensure voice privacy.</p>
+
+            <div class="governance-grid">
+                <div class="governance-item">
+                    <h3>Ephemeral Memory Processing</h3>
+                    <p>Microphone audio streams and uploaded recordings are processed directly within application memory on the local server. Raw voice recordings are not transferred to external advertising networks or model-training providers.</p>
+                </div>
+                <div class="governance-item">
+                    <h3>Local Audit Retention Control</h3>
+                    <p>Verification metrics and transcript snippets are stored locally in SQLite (<code>calls.db</code>). System administrators can purge the entire incident history with a single action using the Wipe History control.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Site Footer -->
+        <footer class="site-footer">
+            <div>&copy; 2026 Voice Clone Shield. Built with defensive speech acoustics.</div>
+            <div class="footer-links">
+                <a href="/privacy">Privacy Policy</a>
+                <a href="/terms">Terms of Service</a>
+                <a href="https://github.com/piyushrajpandit/voice" target="_blank" rel="noopener">Source Code</a>
+            </div>
+        </footer>
+
+    </main>
+
+    <!-- Modal for Call Detail Inspection -->
+    <div class="modal-backdrop" id="call-modal" onclick="if(event.target===this)closeCallDetailModal()">
+        <div class="modal-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <h3 style="font-size:1.1rem;font-weight:600;" id="modal-title">Inspection Record</h3>
+                <button class="btn-secondary" onclick="closeCallDetailModal()" style="padding:4px 8px;font-size:0.8rem;">Close</button>
+            </div>
+            <div id="modal-body"></div>
         </div>
     </div>
 
-    <!-- ═══════════════════════════════════════════
-         LIVE CALL MONITOR TAB
-    ═══════════════════════════════════════════ -->
-    <div class="call-monitor-wrapper" id="call-monitor-wrapper">
-
-        <!-- TOP ROW: Controls + Threat Timeline -->
-        <div class="call-top-row">
-
-            <!-- Left: Setup & Control -->
-            <div class="card">
-                <div class="card-title">
-                    <span>📞 Call Intercept Setup</span>
-                    <div class="live-verdict-badge" id="live-badge">⬤ IDLE</div>
-                </div>
-
-                <!-- How-to steps -->
-                <div class="steps-list">
-                    <div class="step-row">
-                        <div class="step-num">1</div>
-                        <div class="step-text">Receive the suspicious call on your phone</div>
-                    </div>
-                    <div class="step-row">
-                        <div class="step-num">2</div>
-                        <div class="step-text"><strong>Put the call on SPEAKER</strong> — caller's voice plays out loud</div>
-                    </div>
-                    <div class="step-row">
-                        <div class="step-num">3</div>
-                        <div class="step-text">Keep phone still · tap <strong>"Start Monitoring"</strong> below</div>
-                    </div>
-                    <div class="step-row">
-                        <div class="step-num">4</div>
-                        <div class="step-text">Mic picks up caller's voice automatically · results update live every 4s</div>
-                    </div>
-                </div>
-
-                <!-- Big Start/Stop button -->
-                <button class="call-intercept-btn" id="call-btn" onclick="toggleCallMonitor()">
-                    <span id="call-btn-icon">📞</span>
-                    <span id="call-btn-text">Start Monitoring</span>
-                </button>
-
-                <!-- Countdown ring -->
-                <div class="chunk-timer-row" id="chunk-timer-row" style="display:none;">
-                    <div class="chunk-ring">
-                        <svg width="48" height="48" viewBox="0 0 48 48">
-                            <circle class="chunk-ring-bg" cx="24" cy="24" r="20"/>
-                            <circle class="chunk-ring-fill" id="ring-fill" cx="24" cy="24" r="20"
-                                stroke-dasharray="125.66"
-                                stroke-dashoffset="0"/>
-                        </svg>
-                        <div class="chunk-ring-label" id="ring-label">4s</div>
-                    </div>
-                    <div class="chunk-info">
-                        <div class="chunk-info-title" id="chunk-status-text">Listening to caller…</div>
-                        <div class="chunk-info-sub" id="chunk-sub-text">Chunk <span id="chunk-num">1</span> · Next analysis in <span id="chunk-countdown">4</span>s</div>
-                    </div>
-                </div>
-
-                <!-- Sensitivity slider -->
-                <div class="sensitivity-row">
-                    <label>🎚️ Alert Threshold</label>
-                    <input type="range" id="sensitivity-slider" min="40" max="90" value="70"
-                        oninput="document.getElementById('sens-val').textContent = this.value + '%'">
-                    <span class="sensitivity-val" id="sens-val">70%</span>
-                </div>
-            </div>
-
-            <!-- Right: Threat Timeline -->
-            <div class="card timeline-card">
-                <div class="card-title">
-                    <span>📊 Live Threat Timeline</span>
-                    <span style="font-size:0.78rem;color:var(--text-secondary);" id="timeline-status">Waiting for scan…</span>
-                </div>
-
-                <!-- Session stats -->
-                <div class="call-stats-row">
-                    <div class="stat-box">
-                        <div class="stat-box-val" id="stat-total">0</div>
-                        <div class="stat-box-label">Scans</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-box-val" id="stat-fake" style="color:var(--status-red);">0</div>
-                        <div class="stat-box-label">Fake Detected</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-box-val" id="stat-peak" style="color:var(--accent-orange);">0%</div>
-                        <div class="stat-box-label">Peak Threat</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-box-val" id="stat-dur">0s</div>
-                        <div class="stat-box-label">Call Duration</div>
-                    </div>
-                </div>
-
-                <!-- Threat chart canvas -->
-                <canvas id="threatCanvas" style="height:110px;"></canvas>
-                <div class="timeline-labels">
-                    <span>← Oldest</span>
-                    <span style="color:var(--status-red);">— Fake Threshold</span>
-                    <span>Latest →</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- BOTTOM ROW: Scan Log + Live Safeword -->
-        <div style="display:grid;grid-template-columns:1.4fr 1fr;gap:20px;">
-
-            <!-- Scan history -->
-            <div class="card">
-                <div class="card-title">
-                    <span>🕵️ Forensic Scan Log</span>
-                    <button onclick="clearScanLog()" style="background:transparent;border:1px solid rgba(255,255,255,0.1);color:var(--text-secondary);border-radius:6px;padding:4px 10px;font-size:0.75rem;cursor:pointer;">Clear</button>
-                </div>
-                <div class="scan-log" id="scan-log">
-                    <div class="log-empty" id="log-empty-msg">
-                        📡 Start monitoring to see real-time scan results
-                    </div>
-                </div>
-            </div>
-
-            <!-- Live safe-word panel (call version) -->
-            <div class="card">
-                <div class="card-title">
-                    <span>🔐 Emergency Protocol</span>
-                </div>
-                <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:14px;line-height:1.5;">
-                    If a deepfake is detected, ask the caller your pre-agreed family safe-word. Type their answer below:
-                </p>
-                <div style="margin-bottom:10px;">
-                    <input type="text" class="safeword-input" id="call-safeword-input"
-                        placeholder="Type caller's answer…"
-                        style="width:100%;margin-bottom:10px;">
-                    <button class="btn-verify" onclick="verifyCallSafeWord()" style="width:100%;">
-                        🔐 Verify Identity
-                    </button>
-                </div>
-                <div class="safeword-result" id="call-safeword-result"></div>
-
-                <div style="margin-top:16px;padding:12px;background:rgba(220,38,38,0.08);border:1px solid rgba(220,38,38,0.2);border-radius:10px;display:none;" id="auto-alarm-box">
-                    <div style="font-weight:700;color:var(--status-red);margin-bottom:4px;">🚨 AUTO-ALARM TRIGGERED</div>
-                    <p style="font-size:0.8rem;color:#cbd5e1;">2+ consecutive chunks detected as AI-generated voice. Identity challenge recommended immediately.</p>
-                    <button onclick="dismissAlarm()" style="margin-top:8px;background:transparent;border:1px solid rgba(255,255,255,0.15);color:var(--text-secondary);border-radius:6px;padding:5px 12px;font-size:0.8rem;cursor:pointer;width:100%;">Dismiss Alarm</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
+    <!-- ──────────────────────────────────────────
+         APPLICATION JAVASCRIPT LOGIC
+    ────────────────────────────────────────── -->
     <script>
     /* ══════════════════════════════════
        SHARED STATE
@@ -1092,307 +1401,410 @@
     let pcmSamplesBuffer = [];
 
     const canvas = document.getElementById('specCanvas');
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas ? canvas.getContext('2d') : null;
 
     /* ── Mode switch ── */
     function switchMode(mode) {
         currentMode = mode;
-        ['audio','video','call'].forEach(m => {
-            document.getElementById(`tab-${m}`).classList.toggle('active', m === mode);
+        ['audio','video','call','scam'].forEach(m => {
+            const tab = document.getElementById(`tab-${m}`);
+            if (tab) {
+                tab.classList.toggle('active', m === mode);
+                tab.setAttribute('aria-selected', m === mode ? 'true' : 'false');
+            }
         });
-        document.getElementById('main-grid').style.display = (mode === 'call') ? 'none' : 'grid';
-        document.getElementById('call-monitor-wrapper').classList.toggle('active', mode === 'call');
+        
+        const mainGrid = document.getElementById('main-grid');
+        const callWrapper = document.getElementById('call-monitor-wrapper');
+        const scamDash = document.getElementById('scam-dashboard-wrapper');
+
+        if (mainGrid) mainGrid.style.display = (mode === 'audio' || mode === 'video') ? 'grid' : 'none';
+        if (callWrapper) callWrapper.style.display = (mode === 'call') ? 'block' : 'none';
+        if (scamDash) scamDash.style.display = (mode === 'scam') ? 'flex' : 'none';
 
         if (mode === 'audio') {
             document.getElementById('audio-mode-view').style.display = 'block';
             document.getElementById('video-mode-view').style.display = 'none';
-            document.getElementById('panel-title').innerText = 'Audio Feed Input';
-            document.getElementById('panel-sub').innerText = '16kHz Audio Stream';
+            document.getElementById('panel-title').innerText = 'Audio Input';
+            document.getElementById('panel-sub').innerText = '16kHz PCM Stream';
         } else if (mode === 'video') {
             document.getElementById('audio-mode-view').style.display = 'none';
             document.getElementById('video-mode-view').style.display = 'block';
-            document.getElementById('panel-title').innerText = 'Video Call Intercept';
-            document.getElementById('panel-sub').innerText = 'Live Camera + Mic Stream';
+            document.getElementById('panel-title').innerText = 'Video Intercept';
+            document.getElementById('panel-sub').innerText = 'Camera & Microphone Stream';
+        } else if (mode === 'call') {
+            setTimeout(resizeThreatCanvas, 100);
+        } else if (mode === 'scam') {
+            refreshDashboard();
         }
     }
 
-    /* ── Spectrogram helpers ── */
+    /* ── Spectrogram Canvas ── */
     function resizeCanvas() {
-        canvas.width = canvas.parentElement.clientWidth - 20;
-        canvas.height = 80;
+        if (!canvas) return;
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = 70;
         drawIdleSpec();
     }
     window.addEventListener('resize', resizeCanvas);
     setTimeout(resizeCanvas, 100);
 
     function drawIdleSpec() {
-        ctx.fillStyle = "#040711";
+        if (!ctx || !canvas) return;
+        ctx.fillStyle = "#111113";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.strokeStyle = "rgba(6, 182, 212, 0.2)";
+        ctx.strokeStyle = "rgba(255, 255, 255, 0.08)";
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(0, canvas.height / 2);
-        for (let x = 0; x < canvas.width; x += 10) {
-            ctx.lineTo(x, canvas.height / 2 + Math.sin(x * 0.05) * 4);
+        for (let x = 0; x < canvas.width; x += 32) {
+            ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height);
         }
         ctx.stroke();
     }
 
-    function drawSpectrogram(matrix) {
-        if (!matrix || matrix.length === 0) return;
-        const w = canvas.width, h = canvas.height;
-        ctx.fillStyle = "#040711";
-        ctx.fillRect(0, 0, w, h);
-        const cols = matrix.length, colWidth = w / cols;
-        const rows = matrix[0].length, rowHeight = h / rows;
-        for (let c = 0; c < cols; c++) {
-            for (let r = 0; r < rows; r++) {
-                const intensity = Math.min(1.0, matrix[c][r] * 2.0);
-                const red = Math.floor(255 * intensity);
-                const green = Math.floor(200 * (1 - intensity) * intensity * 2);
-                const blue = Math.floor(255 * (1 - intensity));
-                ctx.fillStyle = `rgb(${red},${green},${blue})`;
-                ctx.fillRect(c * colWidth, h - (r + 1) * rowHeight, colWidth + 0.5, rowHeight + 0.5);
+    function drawSpectrogram(mfcc) {
+        if (!ctx || !canvas || !mfcc || !mfcc.length) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#111113";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const rows = mfcc.length;
+        const cols = mfcc[0].length;
+        const cellW = canvas.width / cols;
+        const cellH = canvas.height / rows;
+
+        let minVal = Infinity, maxVal = -Infinity;
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const v = mfcc[r][c];
+                if (v < minVal) minVal = v;
+                if (v > maxVal) maxVal = v;
+            }
+        }
+        const range = (maxVal - minVal) || 1;
+
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const norm = (mfcc[r][c] - minVal) / range;
+                const lum = Math.floor(norm * 180 + 30);
+                ctx.fillStyle = `rgb(${lum}, ${lum}, ${lum + 20})`;
+                ctx.fillRect(c * cellW, canvas.height - (r + 1) * cellH, Math.ceil(cellW), Math.ceil(cellH));
             }
         }
     }
 
-    /* ── WAV encoder ── */
-    function encodePcmWav(samples, sampleRate = 16000) {
-        const buffer = new ArrayBuffer(44 + samples.length * 2);
-        const view = new DataView(buffer);
-        function ws(offset, str) { for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i)); }
-        ws(0, 'RIFF'); view.setUint32(4, 36 + samples.length * 2, true);
-        ws(8, 'WAVE'); ws(12, 'fmt ');
-        view.setUint32(16, 16, true); view.setUint16(20, 1, true);
-        view.setUint16(22, 1, true); view.setUint32(24, sampleRate, true);
-        view.setUint32(28, sampleRate * 2, true); view.setUint16(32, 2, true);
-        view.setUint16(34, 16, true); ws(36, 'data');
-        view.setUint32(40, samples.length * 2, true);
-        let offset = 44;
-        for (let i = 0; i < samples.length; i++, offset += 2) {
-            let s = Math.max(-1, Math.min(1, samples[i]));
-            view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-        }
-        return new Blob([view], { type: 'audio/wav' });
+    /* ── Drag & Drop Handlers ── */
+    const dropzone = document.getElementById('dropzone');
+    if (dropzone) {
+        ['dragenter', 'dragover'].forEach(name => {
+            dropzone.addEventListener(name, (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+        });
+        ['dragleave', 'drop'].forEach(name => {
+            dropzone.addEventListener(name, (e) => { e.preventDefault(); dropzone.classList.remove('dragover'); });
+        });
+        dropzone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) handleUploadedFile(files[0]);
+        });
     }
 
-    async function convertBlobToWav16k(blob) {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
-        const arrayBuffer = await blob.arrayBuffer();
-        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
-        const channelData = audioBuffer.getChannelData(0);
-        const bytesPerSample = 2, blockAlign = bytesPerSample, byteRate = 16000 * blockAlign;
-        const dataSize = channelData.length * bytesPerSample;
-        const buffer = new ArrayBuffer(44 + dataSize);
-        const view = new DataView(buffer);
-        function ws(o, s) { for (let i = 0; i < s.length; i++) view.setUint8(o + i, s.charCodeAt(i)); }
-        ws(0,'RIFF'); view.setUint32(4, 36+dataSize, true); ws(8,'WAVE'); ws(12,'fmt ');
-        view.setUint32(16,16,true); view.setUint16(20,1,true); view.setUint16(22,1,true);
-        view.setUint32(24,16000,true); view.setUint32(28,byteRate,true);
-        view.setUint16(32,blockAlign,true); view.setUint16(34,16,true); ws(36,'data');
-        view.setUint32(40,dataSize,true);
-        let off = 44;
-        for (let i = 0; i < channelData.length; i++, off += 2) {
-            let s = Math.max(-1, Math.min(1, channelData[i]));
-            view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
-        }
-        return new Blob([view], { type: 'audio/wav' });
-    }
-
-    /* ── PCM capture ── */
-    async function startPcmCapture(stream) {
-        pcmAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
-        if (pcmAudioCtx.state === 'suspended') await pcmAudioCtx.resume();
-        pcmSource = pcmAudioCtx.createMediaStreamSource(stream);
-        pcmProcessor = pcmAudioCtx.createScriptProcessor(4096, 1, 1);
-        pcmSamplesBuffer = [];
-        pcmProcessor.onaudioprocess = (e) => {
-            pcmSamplesBuffer.push(new Float32Array(e.inputBuffer.getChannelData(0)));
-        };
-        pcmSource.connect(pcmProcessor);
-        pcmProcessor.connect(pcmAudioCtx.destination);
-    }
-
-    async function stopPcmCapture() {
-        if (pcmProcessor) { pcmProcessor.disconnect(); pcmProcessor = null; }
-        if (pcmSource) { pcmSource.disconnect(); pcmSource = null; }
-        if (pcmAudioCtx) { pcmAudioCtx.close(); pcmAudioCtx = null; }
-        let totalLen = pcmSamplesBuffer.reduce((a, c) => a + c.length, 0);
-        let full = new Float32Array(totalLen);
-        let off = 0;
-        for (let chunk of pcmSamplesBuffer) { full.set(chunk, off); off += chunk.length; }
-        return encodePcmWav(full, 16000);
-    }
-
-    /* ── Analyze blob (shared) ── */
-    async function analyzeAudioBlob(blob, name) {
-        document.getElementById('status-pill').innerHTML = '<span class="spinner"></span> Scanning Wav2Vec2 Model...';
-        document.getElementById('spec-status').innerText = 'Computing Fourier Matrix...';
-        const formData = new FormData();
-        formData.append('file', blob, name || 'input.wav');
-        try {
-            const res = await fetch('/api/analyze', { method: 'POST', body: formData });
-            const data = await res.json();
-            renderResults(data);
-        } catch (e) {
-            alert("Inference error: " + e);
-            document.getElementById('status-pill').innerText = "Failed";
+    function handleFileUpload(e) {
+        const file = e.target.files && e.target.files[0];
+        if (file) {
+            handleUploadedFile(file);
+            e.target.value = '';
         }
     }
 
-    function renderResults(data) {
-        const card = document.getElementById('verdict-card');
-        const icon = document.getElementById('verdict-icon');
-        const text = document.getElementById('verdict-text');
-        const conf = document.getElementById('verdict-conf');
-        const threat = document.getElementById('threat-score');
-        card.classList.remove('state-authentic', 'state-deepfake');
-        if (data.is_fake) {
-            card.classList.add('state-deepfake'); icon.innerText = "🚨";
-            text.innerText = "AI VOICE CLONE DETECTED"; text.style.color = "var(--status-red)";
-            conf.innerText = `Threat Confidence: ${data.confidence}% (Wav2Vec2)`;
-            threat.innerText = `${data.threat_score}%`; threat.style.color = "var(--status-red)";
-            document.getElementById('safeword-banner').classList.add('show');
-        } else {
-            card.classList.add('state-authentic'); icon.innerText = "✅";
-            text.innerText = "AUTHENTIC HUMAN VOICE"; text.style.color = "var(--status-green)";
-            conf.innerText = `Authenticity Confidence: ${data.confidence}%`;
-            threat.innerText = `${data.threat_score}%`; threat.style.color = "var(--status-green)";
-            document.getElementById('safeword-banner').classList.remove('show');
-        }
-        document.getElementById('latency-val').innerText = `${data.latency_ms}ms`;
-        document.getElementById('duration-val').innerText = `${data.duration}s`;
-        document.getElementById('status-pill').innerText = "Analysis Complete";
-        document.getElementById('spec-status').innerText = 'Spectrogram Rendered';
-
-        // Render faster-whisper transcript & safeword alert
-        const transcriptEl = document.getElementById('transcript-display');
-        const swBadge = document.getElementById('safeword-badge');
-        if (data.transcript) {
-            transcriptEl.innerText = `"${data.transcript}"`;
-        } else {
-            transcriptEl.innerText = "(No speech detected)";
-        }
-        if (data.speech_analysis && data.speech_analysis.safeword_spoken) {
-            swBadge.style.display = 'inline-block';
-        } else {
-            swBadge.style.display = 'none';
-        }
-
-        // Render Librosa acoustic forensics
-        if (data.acoustic_forensics) {
-            const af = data.acoustic_forensics;
-            document.getElementById('f0-val').innerText = af.pitch_f0_hz > 0 ? `${af.pitch_f0_hz}Hz` : 'Unvoiced';
-            document.getElementById('centroid-val').innerText = `${af.spectral_centroid_hz}Hz`;
-            document.getElementById('flatness-val').innerText = af.spectral_flatness;
-            document.getElementById('rolloff-val').innerText = `${af.spectral_rolloff_hz}Hz`;
-        }
-
-        if (data.spectrogram_preview && data.spectrogram_preview.length > 0) {
-            drawSpectrogram(data.spectrogram_preview);
-        }
-    }
-
-    async function testPreset(filename) {
-        document.getElementById('status-pill').innerHTML = '<span class="spinner"></span> Analyzing...';
+    async function handleUploadedFile(file) {
+        document.getElementById('status-pill').innerText = 'Decoding...';
         const player = document.getElementById('audio-player');
-        player.src = `/api/samples/${filename}`;
-        player.style.display = 'block';
-        player.play().catch(() => {});
-        try {
-            const response = await fetch(`/api/samples/${filename}`);
-            const blob = await response.blob();
-            analyzeAudioBlob(blob, filename);
-        } catch (err) {
-            alert("Error fetching sample: " + err);
-            document.getElementById('status-pill').innerText = "Error";
+        if (player) {
+            player.src = URL.createObjectURL(file);
+            player.style.display = 'block';
         }
-    }
 
-    async function handleFileUpload(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        document.getElementById('status-pill').innerHTML = '<span class="spinner"></span> Decoding Audio...';
         try {
             const wavBlob = await convertBlobToWav16k(file);
-            const player = document.getElementById('audio-player');
-            player.src = URL.createObjectURL(wavBlob);
-            player.style.display = 'block';
             analyzeAudioBlob(wavBlob, file.name);
         } catch (err) {
             analyzeAudioBlob(file, file.name);
         }
     }
 
-    async function verifySafeWord() {
-        const val = document.getElementById('safeword-input').value;
-        const resElem = document.getElementById('safeword-result');
-        const fd = new FormData(); fd.append('answer', val);
-        const res = await fetch('/api/verify-safeword', { method: 'POST', body: fd });
-        const data = await res.json();
-        resElem.innerHTML = data.verified
-            ? `<span style="color:var(--status-green);">🛡️ ${data.message}</span>`
-            : `<span style="color:var(--status-red);">❌ ${data.message}</span>`;
-    }
+    /* ── Audio Analysis Call ── */
+    async function analyzeAudioBlob(blob, filename) {
+        const statusPill = document.getElementById('status-pill');
+        statusPill.innerText = 'Analyzing...';
+        
+        // Show skeleton state on transcript
+        const transcriptDisplay = document.getElementById('transcript-display');
+        transcriptDisplay.className = 'section-content skeleton';
+        transcriptDisplay.innerText = 'Running neural inference and transcription...';
 
-    /* ── Video controls ── */
-    async function toggleCameraStream() {
-        const videoElem = document.getElementById('live-video');
-        const btnCam = document.getElementById('btn-cam-toggle');
-        const btnRec = document.getElementById('btn-record-video');
-        const hudText = document.getElementById('video-hud-text');
-        if (mediaStream) {
-            mediaStream.getTracks().forEach(t => t.stop()); mediaStream = null;
-            videoElem.srcObject = null;
-            btnCam.innerHTML = '<span>📷</span> Enable Camera';
-            btnRec.disabled = true; hudText.innerText = 'CAM STANDBY';
-        } else {
-            try {
-                mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                videoElem.srcObject = mediaStream;
-                btnCam.innerHTML = '<span>🚫</span> Disable Camera';
-                btnRec.disabled = false; hudText.innerText = 'ACTIVE INTERCEPT';
-            } catch (err) { alert('Camera/Mic permission denied: ' + err); }
+        const startTime = performance.now();
+        const formData = new FormData();
+        formData.append('file', blob, filename || 'audio.wav');
+
+        try {
+            const res = await fetch('/api/analyze', { method: 'POST', body: formData });
+            const data = await res.json();
+            if (!res.ok) {
+                const errMsg = data.error || (data.detail && JSON.stringify(data.detail)) || `Server returned ${res.status}`;
+                throw new Error(errMsg);
+            }
+            const latency = Math.round(performance.now() - startTime);
+
+            statusPill.innerText = 'Complete';
+            transcriptDisplay.className = 'section-content';
+            renderResults(data, filename, latency);
+        } catch (err) {
+            statusPill.innerText = 'Error';
+            transcriptDisplay.className = 'section-content';
+            transcriptDisplay.innerText = 'Analysis failed: ' + err.message;
         }
     }
 
-    let isVideoRecording = false;
-    async function toggleVideoRecording() {
-        const btn = document.getElementById('btn-record-video');
-        const icon = document.getElementById('rec-video-icon');
-        const text = document.getElementById('rec-video-text');
-        if (isVideoRecording) {
-            isVideoRecording = false; btn.classList.remove('recording');
-            icon.innerText = '⏺️'; text.innerText = 'Record Video Call';
-            document.getElementById('status-pill').innerHTML = '<span class="spinner"></span> Extracting PCM Audio...';
-            const cleanWavBlob = await stopPcmCapture();
-            const player = document.getElementById('audio-player');
-            player.src = URL.createObjectURL(cleanWavBlob); player.style.display = 'block';
-            analyzeAudioBlob(cleanWavBlob, 'live_video_call.wav');
-        } else {
-            if (!mediaStream) return;
-            isVideoRecording = true;
-            await startPcmCapture(mediaStream);
-            btn.classList.add('recording'); icon.innerText = '⏹️'; text.innerText = 'Stop & Run Forensics';
+    function renderResults(data, filename, latency) {
+        const threatScore = (data.threat_score !== undefined) ? Math.round(data.threat_score) : Math.round(data.confidence * 100);
+        const isFake = data.is_fake || (threatScore >= 60);
+
+        // Threat Score
+        const tsElem = document.getElementById('threat-score');
+        if (tsElem) {
+            tsElem.innerText = threatScore + '%';
+            tsElem.style.color = isFake ? 'var(--status-danger)' : 'var(--status-safe)';
+        }
+
+        // Latency & Duration
+        const latElem = document.getElementById('latency-val');
+        if (latElem) latElem.innerText = (data.latency_ms || latency) + 'ms';
+        const durElem = document.getElementById('duration-val');
+        if (durElem) durElem.innerText = (data.duration ? data.duration + 's' : '--');
+
+        // Verdict Banner
+        const vCard = document.getElementById('verdict-card');
+        const vText = document.getElementById('verdict-text');
+        const vConf = document.getElementById('verdict-conf');
+        const vScore = document.getElementById('verdict-score-badge');
+
+        if (vCard && vText && vConf && vScore) {
+            vCard.className = 'verdict-banner ' + (isFake ? 'fake' : 'safe');
+            vText.innerText = isFake ? 'Synthetic Speech Detected' : 'Natural Voice Verified';
+            vConf.innerText = isFake
+                ? 'Acoustic markers indicate artificial neural synthesis.'
+                : 'Acoustic markers match biological human speech.';
+            vScore.innerText = threatScore + '% Probability';
+        }
+
+        // Live Transcript — API returns at top level AND inside speech_analysis
+        const transcript = data.transcript || (data.speech_analysis && data.speech_analysis.transcript) || '';
+        const tDisp = document.getElementById('transcript-display');
+        if (tDisp) {
+            tDisp.innerText = transcript ? `"${transcript}"` : '(No speech detected in audio sample)';
+        }
+
+        // Safe-word badge & banner
+        const safewordSpoken = data.speech_analysis && data.speech_analysis.safeword_spoken;
+        const swBadge = document.getElementById('safeword-badge');
+        const swBanner = document.getElementById('safeword-banner');
+        if (swBadge) swBadge.style.display = safewordSpoken ? 'inline-block' : 'none';
+        if (swBanner) swBanner.style.display = isFake ? 'block' : 'none';
+
+        // Acoustic Forensics Strip — API uses 'acoustic_forensics' with _hz suffix
+        const af = data.acoustic_forensics;
+        if (af) {
+            const f0 = document.getElementById('f0-val');
+            const cent = document.getElementById('centroid-val');
+            const flat = document.getElementById('flatness-val');
+            const roll = document.getElementById('rolloff-val');
+            if (f0) f0.innerText = (af.pitch_f0_hz && af.pitch_f0_hz > 0) ? Math.round(af.pitch_f0_hz) + ' Hz' : 'N/A';
+            if (cent) cent.innerText = af.spectral_centroid_hz ? Math.round(af.spectral_centroid_hz) + ' Hz' : '--';
+            if (flat) flat.innerText = af.spectral_flatness !== undefined ? af.spectral_flatness.toFixed(4) : '--';
+            if (roll) roll.innerText = af.spectral_rolloff_hz ? Math.round(af.spectral_rolloff_hz) + ' Hz' : '--';
+        }
+        // Draw spectrogram from spectrogram_preview if present
+        if (data.spectrogram_preview) drawSpectrogram(data.spectrogram_preview);
+
+        // Real-Time NLP Scam Assessment Box
+        const scamBox = document.getElementById('scam-result-box');
+        const scamBadge = document.getElementById('scam-risk-badge');
+        const scamCat = document.getElementById('scam-category-text');
+        const scamExp = document.getElementById('scam-explanation-text');
+        const scamKw = document.getElementById('scam-keywords-container');
+        const advBox = document.getElementById('scam-advisory-box');
+
+        if (scamBox && data.scam_analysis) {
+            const sa = data.scam_analysis;
+            scamBox.style.display = 'block';
+
+            if (sa.is_scam) {
+                scamBox.className = 'fraud-alert-box active high-risk';
+                scamBadge.innerText = `${sa.risk_level} (${sa.scam_score}%)`;
+                scamBadge.style.background = '#fee2e2';
+                scamBadge.style.color = 'var(--status-danger)';
+            } else {
+                scamBox.className = 'fraud-alert-box active safe-risk';
+                scamBadge.innerText = 'Safe Intent';
+                scamBadge.style.background = '#dcfce7';
+                scamBadge.style.color = 'var(--status-safe)';
+            }
+
+            scamCat.innerText = sa.primary_category || (sa.is_scam ? 'Uncategorized Fraud Pattern' : 'No fraud intent detected');
+            scamExp.innerText = sa.explanation || '';
+
+            // Render keywords
+            let kwHtml = '';
+            if (sa.matched_keywords && sa.matched_keywords.length > 0) {
+                kwHtml += sa.matched_keywords.map(kw => `<span class="tag-pill">${kw}</span>`).join(' ');
+            }
+            if (sa.urgency_markers && sa.urgency_markers.length > 0) {
+                kwHtml += ' ' + sa.urgency_markers.map(u => `<span class="tag-pill urgency">${u}</span>`).join(' ');
+            }
+            scamKw.innerHTML = kwHtml || '<span style="font-size:0.75rem;color:var(--text-tertiary);">No suspicious trigger words</span>';
+
+            if (sa.recommended_action && sa.is_scam) {
+                advBox.style.display = 'block';
+                advBox.innerText = sa.recommended_action;
+            } else {
+                advBox.style.display = 'none';
+            }
         }
     }
 
-    /* ── Audio-only recording ── */
+    /* ── Micro-Audio PCM Conversion Helpers ── */
+    async function convertBlobToWav16k(blob) {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+        const arrayBuffer = await blob.arrayBuffer();
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        return encodeWavBuffer(audioBuffer);
+    }
+
+    function encodeWavBuffer(audioBuffer) {
+        const numChannels = 1;
+        const sampleRate = 16000;
+        const channelData = audioBuffer.getChannelData(0);
+        const dataLength = channelData.length * 2;
+        const buffer = new ArrayBuffer(44 + dataLength);
+        const view = new DataView(buffer);
+
+        writeString(view, 0, 'RIFF');
+        view.setUint32(4, 36 + dataLength, true);
+        writeString(view, 8, 'WAVE');
+        writeString(view, 12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, numChannels, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * 2, true);
+        view.setUint16(32, 2, true);
+        view.setUint16(34, 16, true);
+        writeString(view, 36, 'data');
+        view.setUint32(40, dataLength, true);
+
+        let offset = 44;
+        for (let i = 0; i < channelData.length; i++) {
+            const s = Math.max(-1, Math.min(1, channelData[i]));
+            view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+            offset += 2;
+        }
+        return new Blob([view], { type: 'audio/wav' });
+    }
+
+    function writeString(view, offset, string) {
+        for (let i = 0; i < string.length; i++) {
+            view.setUint8(offset + i, string.charCodeAt(i));
+        }
+    }
+
+    async function startPcmCapture(stream) {
+        pcmAudioCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+        pcmSource = pcmAudioCtx.createMediaStreamSource(stream);
+        pcmProcessor = pcmAudioCtx.createScriptProcessor(4096, 1, 1);
+        pcmSamplesBuffer = [];
+
+        pcmProcessor.onaudioprocess = (e) => {
+            const channel = e.inputBuffer.getChannelData(0);
+            pcmSamplesBuffer.push(new Float32Array(channel));
+        };
+        pcmSource.connect(pcmProcessor);
+        pcmProcessor.connect(pcmAudioCtx.destination);
+    }
+
+    async function stopPcmCapture() {
+        if (pcmProcessor && pcmSource) {
+            pcmSource.disconnect();
+            pcmProcessor.disconnect();
+        }
+        if (pcmAudioCtx && pcmAudioCtx.state !== 'closed') {
+            await pcmAudioCtx.close();
+        }
+
+        let totalLength = 0;
+        for (const chunk of pcmSamplesBuffer) totalLength += chunk.length;
+        const merged = new Float32Array(totalLength);
+        let offset = 0;
+        for (const chunk of pcmSamplesBuffer) {
+            merged.set(chunk, offset);
+            offset += chunk.length;
+        }
+
+        const dataLength = merged.length * 2;
+        const buffer = new ArrayBuffer(44 + dataLength);
+        const view = new DataView(buffer);
+
+        writeString(view, 0, 'RIFF');
+        view.setUint32(4, 36 + dataLength, true);
+        writeString(view, 8, 'WAVE');
+        writeString(view, 12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, 1, true);
+        view.setUint32(24, 16000, true);
+        view.setUint32(28, 32000, true);
+        view.setUint16(32, 2, true);
+        view.setUint16(34, 16, true);
+        writeString(view, 36, 'data');
+        view.setUint32(40, dataLength, true);
+
+        let byteOffset = 44;
+        for (let i = 0; i < merged.length; i++) {
+            const s = Math.max(-1, Math.min(1, merged[i]));
+            view.setInt16(byteOffset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+            byteOffset += 2;
+        }
+        return new Blob([view], { type: 'audio/wav' });
+    }
+
+    /* ── Live Audio Recording Controls ── */
     let isAudioRecording = false;
     let liveAudioStream = null;
+    let recTimerInterval = null;
+    let recSeconds = 0;
+
     async function toggleAudioRecording() {
         const btn = document.getElementById('btn-record');
         const micText = document.getElementById('mic-text');
-        const micIcon = document.getElementById('mic-icon');
+        const recTimer = document.getElementById('rec-timer');
+
         if (isAudioRecording) {
-            isAudioRecording = false; btn.classList.remove('recording');
-            micText.innerText = "Record Voice Live"; micIcon.innerText = "🎙️";
+            isAudioRecording = false;
+            clearInterval(recTimerInterval);
+            if (recTimer) recTimer.style.display = 'none';
+            btn.classList.remove('recording');
+            micText.innerText = 'Analyzing Recording...';
+
             const cleanWavBlob = await stopPcmCapture();
-            if (liveAudioStream) { liveAudioStream.getTracks().forEach(t => t.stop()); liveAudioStream = null; }
+            if (liveAudioStream) {
+                liveAudioStream.getTracks().forEach(t => t.stop());
+                liveAudioStream = null;
+            }
             const player = document.getElementById('audio-player');
-            player.src = URL.createObjectURL(cleanWavBlob); player.style.display = 'block';
-            analyzeAudioBlob(cleanWavBlob, "live_mic.wav");
+            player.src = URL.createObjectURL(cleanWavBlob);
+            player.style.display = 'block';
+
+            analyzeAudioBlob(cleanWavBlob, 'live_microphone.wav');
+            micText.innerText = 'Record Voice Live';
         } else {
             try {
                 liveAudioStream = await navigator.mediaDevices.getUserMedia({
@@ -1401,381 +1813,526 @@
                 isAudioRecording = true;
                 await startPcmCapture(liveAudioStream);
                 btn.classList.add('recording');
-                micText.innerText = "Stop Recording (Speak 3s+)";
-                micIcon.innerText = "⏹️";
-            } catch (err) { alert("Microphone permission denied: " + err); }
+                micText.innerText = 'Stop Recording';
+
+                recSeconds = 0;
+                if (recTimer) {
+                    recTimer.style.display = 'block';
+                    recTimer.innerText = 'Recording 00:00';
+                    recTimerInterval = setInterval(() => {
+                        recSeconds++;
+                        const m = String(Math.floor(recSeconds / 60)).padStart(2, '0');
+                        const s = String(recSeconds % 60).padStart(2, '0');
+                        recTimer.innerText = `Recording ${m}:${s}`;
+                    }, 1000);
+                }
+            } catch (err) {
+                alert('Microphone permission required: ' + err.message);
+            }
         }
     }
 
-    /* ═══════════════════════════════════════════════════
-       LIVE CALL MONITOR LOGIC
-    ═══════════════════════════════════════════════════ */
+    /* ── Video Intercept Controls ── */
+    let isVideoRecording = false;
+
+    async function toggleCameraStream() {
+        const videoElem = document.getElementById('live-video');
+        const btnCam = document.getElementById('btn-cam-toggle');
+        const btnRec = document.getElementById('btn-record-video');
+        const hudText = document.getElementById('video-hud-text');
+
+        if (mediaStream) {
+            mediaStream.getTracks().forEach(t => t.stop());
+            mediaStream = null;
+            videoElem.srcObject = null;
+            btnCam.innerText = 'Enable Camera';
+            btnRec.disabled = true;
+            hudText.innerText = 'Camera Standby';
+        } else {
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                videoElem.srcObject = mediaStream;
+                btnCam.innerText = 'Disable Camera';
+                btnRec.disabled = false;
+                hudText.innerText = 'Active Camera Stream';
+            } catch (err) {
+                alert('Camera access denied: ' + err.message);
+            }
+        }
+    }
+
+    async function toggleVideoRecording() {
+        const btn = document.getElementById('btn-record-video');
+        if (isVideoRecording) {
+            isVideoRecording = false;
+            btn.classList.remove('recording');
+            btn.innerText = 'Record Stream';
+            document.getElementById('status-pill').innerText = 'Extracting Audio...';
+
+            const cleanWavBlob = await stopPcmCapture();
+            const player = document.getElementById('audio-player');
+            player.src = URL.createObjectURL(cleanWavBlob);
+            player.style.display = 'block';
+
+            analyzeAudioBlob(cleanWavBlob, 'live_video_stream.wav');
+        } else {
+            if (!mediaStream) return;
+            isVideoRecording = true;
+            await startPcmCapture(mediaStream);
+            btn.classList.add('recording');
+            btn.innerText = 'Stop & Analyze';
+        }
+    }
+
+    /* ── Safe-Word Verification ── */
+    async function verifySafeWord() {
+        const val = document.getElementById('safeword-input').value.trim();
+        const resElem = document.getElementById('safeword-result');
+        if (!val) {
+            resElem.innerText = 'Please enter a safe-word.';
+            resElem.style.color = 'var(--status-danger)';
+            return;
+        }
+
+        const fd = new FormData();
+        fd.append('answer', val);
+        try {
+            const res = await fetch('/api/verify-safeword', { method: 'POST', body: fd });
+            const data = await res.json();
+            resElem.innerText = data.message;
+            resElem.style.color = data.verified ? 'var(--status-safe)' : 'var(--status-danger)';
+        } catch (e) {
+            resElem.innerText = 'Verification failed: ' + e.message;
+        }
+    }
+
+    /* ═══════════════════════════════════════════
+       LIVE CALL MONITOR
+    ═══════════════════════════════════════════ */
     let callMonitorActive = false;
     let callStream = null;
     let callPcmCtx = null, callPcmProcessor = null, callPcmSource = null;
-    let callChunkBuffer = [];           // rolling PCM buffer (current chunk)
-    let callChunkInterval = null;       // fires every 4s
-    let callCountdownInterval = null;   // ring countdown every 1s
-    let callChunkNumber = 0;
+    let callSamplesAccumulator = [];
+    let callTimerInterval = null;
     let callCountdown = 4;
-    let consecutiveFakes = 0;
-    let callSessionStart = null;
-    let callDurInterval = null;
-    let alarmActive = false;
+    let callTotalSeconds = 0;
+    let peakThreatScore = 0;
 
-    // Timeline data
-    const MAX_TIMELINE_POINTS = 20;
-    const threatHistory = [];           // { score, isFake, time }
-
+    const threatHistory = [];
     const threatCanvas = document.getElementById('threatCanvas');
-    const tCtx = threatCanvas.getContext('2d');
+    const tCtx = threatCanvas ? threatCanvas.getContext('2d') : null;
 
     function resizeThreatCanvas() {
-        threatCanvas.width = threatCanvas.parentElement.clientWidth - 2;
+        if (!threatCanvas) return;
+        threatCanvas.width = threatCanvas.parentElement.clientWidth;
         threatCanvas.height = 110;
         drawThreatChart();
     }
-    window.addEventListener('resize', resizeThreatCanvas);
-    setTimeout(resizeThreatCanvas, 150);
 
     function drawThreatChart() {
+        if (!tCtx || !threatCanvas) return;
         const w = threatCanvas.width, h = threatCanvas.height;
-        tCtx.fillStyle = '#040711';
+        tCtx.fillStyle = '#111113';
         tCtx.fillRect(0, 0, w, h);
 
-        // Grid lines
-        tCtx.strokeStyle = 'rgba(255,255,255,0.05)';
-        tCtx.lineWidth = 1;
-        [25, 50, 70, 100].forEach(pct => {
-            const y = h - (pct / 100) * h;
-            tCtx.beginPath(); tCtx.moveTo(0, y); tCtx.lineTo(w, y); tCtx.stroke();
-        });
-
         // Threshold line at 70%
-        const threshold = parseInt(document.getElementById('sensitivity-slider').value);
-        const threshY = h - (threshold / 100) * h;
-        tCtx.strokeStyle = 'rgba(244,63,94,0.5)';
-        tCtx.setLineDash([5, 5]); tCtx.lineWidth = 1.5;
-        tCtx.beginPath(); tCtx.moveTo(0, threshY); tCtx.lineTo(w, threshY); tCtx.stroke();
+        const y70 = h - (70 / 100) * h;
+        tCtx.strokeStyle = 'rgba(207, 34, 46, 0.4)';
+        tCtx.lineWidth = 1;
+        tCtx.setLineDash([4, 4]);
+        tCtx.beginPath();
+        tCtx.moveTo(0, y70);
+        tCtx.lineTo(w, y70);
+        tCtx.stroke();
         tCtx.setLineDash([]);
 
-        if (threatHistory.length < 2) {
-            // placeholder text
-            tCtx.fillStyle = 'rgba(255,255,255,0.1)';
-            tCtx.font = '13px Outfit, sans-serif';
-            tCtx.textAlign = 'center';
-            tCtx.fillText('Threat data will appear here when monitoring starts', w/2, h/2);
-            tCtx.textAlign = 'left';
-            return;
-        }
+        if (threatHistory.length < 2) return;
 
-        const pts = threatHistory.slice(-MAX_TIMELINE_POINTS);
-        const xStep = w / (MAX_TIMELINE_POINTS - 1);
-
-        // Fill area under curve
-        const gradient = tCtx.createLinearGradient(0, 0, 0, h);
-        gradient.addColorStop(0, 'rgba(244,63,94,0.4)');
-        gradient.addColorStop(1, 'rgba(244,63,94,0)');
         tCtx.beginPath();
-        pts.forEach((p, i) => {
-            const x = i * xStep, y = h - (p.score / 100) * h;
-            i === 0 ? tCtx.moveTo(x, y) : tCtx.lineTo(x, y);
+        threatHistory.forEach((pt, i) => {
+            const x = (i / (threatHistory.length - 1)) * (w - 20) + 10;
+            const y = h - (pt.score / 100) * (h - 20) - 10;
+            if (i === 0) tCtx.moveTo(x, y);
+            else tCtx.lineTo(x, y);
         });
-        tCtx.lineTo((pts.length - 1) * xStep, h);
-        tCtx.lineTo(0, h);
-        tCtx.closePath();
-        tCtx.fillStyle = gradient;
-        tCtx.fill();
-
-        // Line
-        tCtx.beginPath();
-        tCtx.lineWidth = 2.5;
-        pts.forEach((p, i) => {
-            const x = i * xStep, y = h - (p.score / 100) * h;
-            i === 0 ? tCtx.moveTo(x, y) : tCtx.lineTo(x, y);
-        });
-        tCtx.strokeStyle = 'rgba(244,63,94,0.9)';
+        tCtx.strokeStyle = '#0071e3';
+        tCtx.lineWidth = 2;
         tCtx.stroke();
-
-        // Dots
-        pts.forEach((p, i) => {
-            const x = i * xStep, y = h - (p.score / 100) * h;
-            tCtx.beginPath(); tCtx.arc(x, y, 4, 0, Math.PI * 2);
-            tCtx.fillStyle = p.isFake ? '#f43f5e' : '#10b981';
-            tCtx.fill();
-            tCtx.strokeStyle = 'rgba(255,255,255,0.3)'; tCtx.lineWidth = 1;
-            tCtx.stroke();
-        });
-    }
-
-    function updateThreatStats() {
-        const total = threatHistory.length;
-        const fakes = threatHistory.filter(p => p.isFake).length;
-        const peak = total ? Math.max(...threatHistory.map(p => p.score)) : 0;
-        document.getElementById('stat-total').innerText = total;
-        document.getElementById('stat-fake').innerText = fakes;
-        document.getElementById('stat-peak').innerText = `${Math.round(peak)}%`;
-    }
-
-    function addScanEntry(result, chunkNum) {
-        const log = document.getElementById('scan-log');
-        const emptyMsg = document.getElementById('log-empty-msg');
-        if (emptyMsg) emptyMsg.remove();
-
-        const now = new Date().toLocaleTimeString();
-        const entry = document.createElement('div');
-        entry.className = `scan-entry ${result.is_fake ? 'fake' : 'real'}`;
-        entry.innerHTML = `
-            <div class="scan-entry-icon">${result.is_fake ? '🚨' : '✅'}</div>
-            <div class="scan-entry-info">
-                <div class="scan-entry-verdict" style="color:${result.is_fake ? 'var(--status-red)' : 'var(--status-green)'}">
-                    ${result.is_fake ? 'AI CLONE DETECTED' : 'AUTHENTIC VOICE'}
-                </div>
-                <div class="scan-entry-meta">Chunk #${chunkNum} · ${now} · ${result.duration}s</div>
-            </div>
-            <div class="scan-entry-score" style="color:${result.is_fake ? 'var(--status-red)' : 'var(--status-green)'}">
-                ${result.threat_score}%
-            </div>
-        `;
-        log.insertBefore(entry, log.firstChild);
-        // keep max 30 entries
-        while (log.children.length > 30) log.removeChild(log.lastChild);
-    }
-
-    function startCountdownRing(seconds) {
-        const circumference = 125.66;
-        const fill = document.getElementById('ring-fill');
-        const label = document.getElementById('ring-label');
-        const sub = document.getElementById('chunk-countdown');
-        callCountdown = seconds;
-
-        if (callCountdownInterval) clearInterval(callCountdownInterval);
-        callCountdownInterval = setInterval(() => {
-            callCountdown--;
-            if (callCountdown < 0) callCountdown = 0;
-            const pct = callCountdown / seconds;
-            fill.style.strokeDashoffset = circumference * (1 - pct);
-            label.innerText = `${callCountdown}s`;
-            sub.innerText = callCountdown;
-        }, 1000);
-    }
-
-    function updateLiveBadge(isFake, score) {
-        const badge = document.getElementById('live-badge');
-        if (isFake) {
-            badge.className = 'live-verdict-badge danger';
-            badge.innerText = `🚨 FAKE ${score}%`;
-        } else {
-            badge.className = 'live-verdict-badge safe';
-            badge.innerText = `✅ REAL ${100 - score}%`;
-        }
-    }
-
-    async function analyzeCallChunk() {
-        if (!callMonitorActive) return;
-
-        // Snapshot current buffer and reset it
-        const snapshot = callChunkBuffer.slice();
-        callChunkBuffer = [];
-
-        if (snapshot.length === 0) return;
-
-        let totalLen = snapshot.reduce((a, c) => a + c.length, 0);
-        if (totalLen < 16000 * 1) return; // need at least 1 second
-
-        let full = new Float32Array(totalLen);
-        let off = 0;
-        for (let chunk of snapshot) { full.set(chunk, off); off += chunk.length; }
-        const wavBlob = encodePcmWav(full, 16000);
-
-        // Update status
-        callChunkNumber++;
-        document.getElementById('chunk-status-text').innerText = `🔍 Analyzing chunk #${callChunkNumber}…`;
-        document.getElementById('chunk-num').innerText = callChunkNumber + 1;
-
-        const formData = new FormData();
-        formData.append('file', wavBlob, `call_chunk_${callChunkNumber}.wav`);
-
-        try {
-            const res = await fetch('/api/analyze', { method: 'POST', body: formData });
-            const data = await res.json();
-
-            const threshold = parseInt(document.getElementById('sensitivity-slider').value);
-
-            // Update timeline
-            threatHistory.push({ score: data.threat_score, isFake: data.is_fake, time: Date.now() });
-            if (threatHistory.length > 50) threatHistory.shift();
-            drawThreatChart();
-            updateThreatStats();
-            document.getElementById('timeline-status').innerText = `Last scan: ${new Date().toLocaleTimeString()}`;
-
-            // Update live badge
-            updateLiveBadge(data.is_fake, data.threat_score);
-
-            // Add to scan log
-            addScanEntry(data, callChunkNumber);
-
-            // Auto-alarm logic (2 consecutive fakes above threshold)
-            if (data.is_fake && data.threat_score >= threshold) {
-                consecutiveFakes++;
-            } else {
-                consecutiveFakes = 0;
-            }
-
-            if (consecutiveFakes >= 2 && !alarmActive) {
-                triggerAlarm();
-            }
-
-            // Reset chunk status text
-            document.getElementById('chunk-status-text').innerText = 'Listening to caller…';
-
-        } catch (e) {
-            console.error('Chunk analysis error:', e);
-        }
-
-        // Restart countdown for next chunk
-        startCountdownRing(4);
-    }
-
-    function triggerAlarm() {
-        alarmActive = true;
-        document.getElementById('alarm-overlay').classList.add('active');
-        document.getElementById('auto-alarm-box').style.display = 'block';
-
-        // Beep sound
-        try {
-            const ctx2 = new (window.AudioContext || window.webkitAudioContext)();
-            [0, 400, 800].forEach(delay => {
-                const oscillator = ctx2.createOscillator();
-                const gainNode = ctx2.createGain();
-                oscillator.connect(gainNode); gainNode.connect(ctx2.destination);
-                oscillator.frequency.value = 880;
-                oscillator.type = 'square';
-                gainNode.gain.setValueAtTime(0.3, ctx2.currentTime + delay/1000);
-                gainNode.gain.exponentialRampToValueAtTime(0.001, ctx2.currentTime + delay/1000 + 0.3);
-                oscillator.start(ctx2.currentTime + delay/1000);
-                oscillator.stop(ctx2.currentTime + delay/1000 + 0.3);
-            });
-        } catch (e) {}
-    }
-
-    function dismissAlarm() {
-        alarmActive = false;
-        consecutiveFakes = 0;
-        document.getElementById('alarm-overlay').classList.remove('active');
-        document.getElementById('auto-alarm-box').style.display = 'none';
     }
 
     async function toggleCallMonitor() {
-        if (!callMonitorActive) {
-            await startCallMonitor();
-        } else {
-            stopCallMonitor();
-        }
-    }
+        const btn = document.getElementById('call-btn');
+        const badge = document.getElementById('live-badge');
+        const timerRow = document.getElementById('chunk-timer-row');
 
-    async function startCallMonitor() {
-        try {
-            callStream = await navigator.mediaDevices.getUserMedia({
-                audio: {
-                    echoCancellation: false,  // Keep caller audio unprocessed
-                    noiseSuppression: false,
-                    autoGainControl: false,
-                    channelCount: 1
-                }
-            });
-        } catch (err) {
-            alert('Microphone permission denied: ' + err);
-            return;
-        }
+        if (callMonitorActive) {
+            callMonitorActive = false;
+            clearInterval(callTimerInterval);
+            btn.classList.remove('recording');
+            document.getElementById('call-btn-text').innerText = 'Start Call Monitoring';
+            badge.innerText = 'Idle';
+            badge.style.color = 'var(--text-tertiary)';
+            timerRow.style.display = 'none';
 
-        callMonitorActive = true;
-        callChunkNumber = 0;
-        consecutiveFakes = 0;
-        callChunkBuffer = [];
-        callSessionStart = Date.now();
-
-        // Start PCM capture into rolling buffer
-        callPcmCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
-        if (callPcmCtx.state === 'suspended') await callPcmCtx.resume();
-        callPcmSource = callPcmCtx.createMediaStreamSource(callStream);
-        callPcmProcessor = callPcmCtx.createScriptProcessor(4096, 1, 1);
-        callPcmProcessor.onaudioprocess = (e) => {
-            if (callMonitorActive) {
-                callChunkBuffer.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+            if (callStream) {
+                callStream.getTracks().forEach(t => t.stop());
+                callStream = null;
             }
-        };
-        callPcmSource.connect(callPcmProcessor);
-        callPcmProcessor.connect(callPcmCtx.destination);
+            if (callPcmCtx && callPcmCtx.state !== 'closed') {
+                callPcmCtx.close();
+            }
+        } else {
+            try {
+                callStream = await navigator.mediaDevices.getUserMedia({
+                    audio: { echoCancellation: true, noiseSuppression: false, autoGainControl: true }
+                });
+                callMonitorActive = true;
+                btn.classList.add('recording');
+                document.getElementById('call-btn-text').innerText = 'Stop Monitoring';
+                badge.innerText = 'Monitoring Live';
+                badge.style.color = 'var(--status-safe)';
+                timerRow.style.display = 'block';
 
-        // Update UI
-        const btn = document.getElementById('call-btn');
-        btn.classList.add('monitoring');
-        document.getElementById('call-btn-icon').innerText = '⏹️';
-        document.getElementById('call-btn-text').innerText = 'Stop Monitoring';
-        document.getElementById('chunk-timer-row').style.display = 'flex';
+                callPcmCtx = new (window.AudioContext || window.webkitAudioContext)({ sampleRate: 16000 });
+                callPcmSource = callPcmCtx.createMediaStreamSource(callStream);
+                callPcmProcessor = callPcmCtx.createScriptProcessor(4096, 1, 1);
+                callSamplesAccumulator = [];
 
-        // Start countdown
-        startCountdownRing(4);
+                callPcmProcessor.onaudioprocess = (e) => {
+                    if (!callMonitorActive) return;
+                    callSamplesAccumulator.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+                };
+                callPcmSource.connect(callPcmProcessor);
+                callPcmProcessor.connect(callPcmCtx.destination);
 
-        // Run analysis every 4 seconds
-        callChunkInterval = setInterval(analyzeCallChunk, 4000);
+                callCountdown = 4;
+                callTimerInterval = setInterval(async () => {
+                    callCountdown--;
+                    const ringElem = document.getElementById('ring-countdown');
+                    if (ringElem) ringElem.innerText = callCountdown;
 
-        // Session duration counter
-        callDurInterval = setInterval(() => {
-            const secs = Math.floor((Date.now() - callSessionStart) / 1000);
-            document.getElementById('stat-dur').innerText = `${secs}s`;
-        }, 1000);
+                    if (callCountdown <= 0) {
+                        callCountdown = 4;
+                        await processLiveChunk();
+                    }
+                }, 1000);
+            } catch (err) {
+                alert('Microphone access required: ' + err.message);
+            }
+        }
     }
 
-    function stopCallMonitor() {
-        callMonitorActive = false;
+    async function processLiveChunk() {
+        if (!callSamplesAccumulator.length) return;
+        const chunks = [...callSamplesAccumulator];
+        callSamplesAccumulator = [];
 
-        clearInterval(callChunkInterval);
-        clearInterval(callCountdownInterval);
-        clearInterval(callDurInterval);
-        callChunkInterval = null;
+        let len = 0;
+        for (const c of chunks) len += c.length;
+        const merged = new Float32Array(len);
+        let off = 0;
+        for (const c of chunks) { merged.set(c, off); off += c.length; }
 
-        if (callPcmProcessor) { callPcmProcessor.disconnect(); callPcmProcessor = null; }
-        if (callPcmSource) { callPcmSource.disconnect(); callPcmSource = null; }
-        if (callPcmCtx) { callPcmCtx.close(); callPcmCtx = null; }
-        if (callStream) { callStream.getTracks().forEach(t => t.stop()); callStream = null; }
+        const dataLength = merged.length * 2;
+        const buffer = new ArrayBuffer(44 + dataLength);
+        const view = new DataView(buffer);
+        writeString(view, 0, 'RIFF');
+        view.setUint32(4, 36 + dataLength, true);
+        writeString(view, 8, 'WAVE');
+        writeString(view, 12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, 1, true);
+        view.setUint32(24, 16000, true);
+        view.setUint32(28, 32000, true);
+        view.setUint16(32, 2, true);
+        view.setUint16(34, 16, true);
+        writeString(view, 36, 'data');
+        view.setUint32(40, dataLength, true);
 
-        // Reset UI
-        const btn = document.getElementById('call-btn');
-        btn.classList.remove('monitoring');
-        document.getElementById('call-btn-icon').innerText = '📞';
-        document.getElementById('call-btn-text').innerText = 'Start Monitoring';
-        document.getElementById('chunk-timer-row').style.display = 'none';
-        document.getElementById('live-badge').className = 'live-verdict-badge';
-        document.getElementById('live-badge').innerText = '⬤ IDLE';
+        let byteOffset = 44;
+        for (let i = 0; i < merged.length; i++) {
+            const s = Math.max(-1, Math.min(1, merged[i]));
+            view.setInt16(byteOffset, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+            byteOffset += 2;
+        }
+        const wavBlob = new Blob([view], { type: 'audio/wav' });
+
+        const fd = new FormData();
+        fd.append('file', wavBlob, 'stream_chunk.wav');
+        try {
+            const res = await fetch('/api/analyze', { method: 'POST', body: fd });
+            const data = await res.json();
+            const score = (data.threat_score !== undefined) ? Math.round(data.threat_score) : Math.round(data.confidence * 100);
+            const isFake = data.is_fake || (score >= 60);
+
+            if (score > peakThreatScore) {
+                peakThreatScore = score;
+                const peakElem = document.getElementById('stat-peak');
+                if (peakElem) peakElem.innerText = `Peak Threat: ${peakThreatScore}%`;
+            }
+
+            threatHistory.push({ score, isFake, time: new Date() });
+            if (threatHistory.length > 20) threatHistory.shift();
+            drawThreatChart();
+            appendScanLogRow(data, score, isFake);
+        } catch (e) {
+            console.error('Chunk analysis failed', e);
+        }
     }
 
-    async function verifyCallSafeWord() {
-        const val = document.getElementById('call-safeword-input').value;
-        const resElem = document.getElementById('call-safeword-result');
-        const fd = new FormData(); fd.append('answer', val);
-        const res = await fetch('/api/verify-safeword', { method: 'POST', body: fd });
-        const data = await res.json();
-        resElem.innerHTML = data.verified
-            ? `<span style="color:var(--status-green);">🛡️ ${data.message}</span>`
-            : `<span style="color:var(--status-red);">❌ ${data.message}</span>`;
-        if (data.verified) dismissAlarm();
+    function appendScanLogRow(data, score, isFake) {
+        const tbody = document.getElementById('scan-log-body');
+        if (!tbody) return;
+
+        if (tbody.children.length === 1 && tbody.children[0].innerText.includes('No scan intervals')) {
+            tbody.innerHTML = '';
+        }
+
+        const tr = document.createElement('tr');
+        const timeStr = new Date().toLocaleTimeString();
+        tr.innerHTML = `
+            <td>${timeStr}</td>
+            <td><span class="verdict-badge" style="background:${isFake ? '#fee2e2' : '#dcfce7'};color:${isFake ? 'var(--status-danger)' : 'var(--status-safe)'};">${isFake ? 'Synthetic' : 'Natural'}</span></td>
+            <td style="font-family:var(--font-mono);">${score}%</td>
+            <td style="font-size:0.8rem;color:var(--text-secondary);">${data.transcript ? `"${data.transcript.slice(0, 40)}..."` : 'Silence/Noise'}</td>
+        `;
+        tbody.prepend(tr);
     }
 
     function clearScanLog() {
-        const log = document.getElementById('scan-log');
-        log.innerHTML = '<div class="log-empty" id="log-empty-msg">📡 Start monitoring to see real-time scan results</div>';
-        threatHistory.length = 0;
-        drawThreatChart();
-        updateThreatStats();
-        consecutiveFakes = 0;
-        dismissAlarm();
+        const tbody = document.getElementById('scan-log-body');
+        if (tbody) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-tertiary);padding:24px;">No scan intervals recorded yet.</td></tr>';
+        }
     }
 
-    // Redraw chart on slider change
-    document.getElementById('sensitivity-slider').addEventListener('input', drawThreatChart);
+    /* ═══════════════════════════════════════════
+       FRAUD DASHBOARD & AUDIT HISTORY
+    ═══════════════════════════════════════════ */
+    let cachedCalls = [];
+    let activeFilter = 'all';
 
+    async function refreshDashboard() {
+        try {
+            const [callsRes, statsRes] = await Promise.all([
+                fetch('/api/scam/calls?limit=50'),
+                fetch('/api/scam/analytics')
+            ]);
+            cachedCalls = await callsRes.json();
+            const stats = await statsRes.json();
+
+            // Update KPI numbers
+            document.getElementById('kpi-total').innerText = stats.total_calls || 0;
+            document.getElementById('kpi-clones').innerText = stats.deepfakes_detected || 0;
+            document.getElementById('kpi-scams').innerText = stats.scams_flagged || 0;
+            document.getElementById('kpi-safe').innerText = stats.safe_calls || 0;
+
+            renderCallsTable();
+        } catch (e) {
+            console.error('Failed to load dashboard data', e);
+        }
+    }
+
+    function filterCalls(f) {
+        activeFilter = f;
+        ['all', 'flagged', 'safe'].forEach(btnId => {
+            const b = document.getElementById(`filter-${btnId}`);
+            if (b) b.classList.toggle('active', btnId === f);
+        });
+        renderCallsTable();
+    }
+
+    function renderCallsTable() {
+        const tbody = document.getElementById('calls-table-body');
+        if (!tbody) return;
+
+        let filtered = cachedCalls;
+        if (activeFilter === 'flagged') {
+            filtered = cachedCalls.filter(c => (c.threat_score >= 60) || (c.scam_score >= 50));
+        } else if (activeFilter === 'safe') {
+            filtered = cachedCalls.filter(c => (c.threat_score < 60) && (c.scam_score < 50));
+        }
+
+        if (filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--text-tertiary);">No incident records match the selected filter.</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = filtered.map(c => {
+            const isSynthetic = c.threat_score >= 60;
+            const isScam = c.scam_score >= 50;
+            const timeFormatted = new Date(c.timestamp).toLocaleString();
+            const transcriptSnippet = c.transcript ? (c.transcript.length > 50 ? c.transcript.slice(0, 50) + '...' : c.transcript) : 'None';
+
+            return `
+                <tr>
+                    <td style="font-size:0.8rem;color:var(--text-secondary);">${timeFormatted}</td>
+                    <td>
+                        <span class="verdict-badge" style="background:${isSynthetic || isScam ? '#fee2e2' : '#dcfce7'};color:${isSynthetic || isScam ? 'var(--status-danger)' : 'var(--status-safe)'};">
+                            ${c.composite_verdict || (isSynthetic ? 'Synthetic' : 'Natural')}
+                        </span>
+                    </td>
+                    <td style="font-family:var(--font-mono);font-weight:600;color:${isSynthetic ? 'var(--status-danger)' : 'inherit'};">${c.threat_score}%</td>
+                    <td style="font-family:var(--font-mono);font-weight:600;color:${isScam ? 'var(--status-warning)' : 'inherit'};">${c.scam_score}%</td>
+                    <td style="font-size:0.82rem;font-weight:500;">${c.primary_category || 'None'}</td>
+                    <td style="font-size:0.82rem;color:var(--text-secondary);font-style:italic;">"${transcriptSnippet}"</td>
+                    <td>
+                        <button class="btn-secondary" onclick="viewCallDetail(${c.id})" style="padding:4px 8px;font-size:0.75rem;">Inspect</button>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    async function clearCallHistory() {
+        if (!confirm('Purge all logged incident records from the local database?')) return;
+        try {
+            await fetch('/api/scam/clear-history', { method: 'POST' });
+            refreshDashboard();
+        } catch (e) {
+            alert('Failed to clear records: ' + e.message);
+        }
+    }
+
+    function viewCallDetail(callId) {
+        const call = cachedCalls.find(c => c.id === callId);
+        if (!call) return;
+
+        const modal = document.getElementById('call-modal');
+        const body = document.getElementById('modal-body');
+        const isSynthetic = call.threat_score >= 60;
+        const isScam = call.scam_score >= 50;
+
+        let keywords = [];
+        try { keywords = JSON.parse(call.keywords_json || '[]'); } catch (e) {}
+
+        body.innerHTML = `
+            <div style="margin-bottom:16px;">
+                <div style="font-size:0.8rem;color:var(--text-secondary);">Recorded: ${new Date(call.timestamp).toLocaleString()} &middot; ID: #${call.id}</div>
+                <div style="font-size:1.1rem;font-weight:600;margin-top:4px;">${call.composite_verdict}</div>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;">
+                <div class="metric-box">
+                    <div class="metric-label">Deepfake Probability</div>
+                    <div class="metric-value" style="color:${isSynthetic ? 'var(--status-danger)' : 'var(--status-safe)'};">${call.threat_score}%</div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-label">Fraud Risk Score</div>
+                    <div class="metric-value" style="color:${isScam ? 'var(--status-warning)' : 'var(--status-safe)'};">${call.scam_score}%</div>
+                </div>
+            </div>
+
+            <div class="section-box" style="margin-bottom:16px;">
+                <div class="section-label">Speech Transcript</div>
+                <div style="font-size:0.9rem;margin-top:4px;font-style:italic;">"${call.transcript || 'No transcript recorded.'}"</div>
+            </div>
+
+            <div style="margin-bottom:16px;">
+                <div class="section-label" style="margin-bottom:6px;">Fraud Classification & Trigger Phrases</div>
+                <div style="font-weight:600;font-size:0.9rem;margin-bottom:6px;">${call.primary_category || 'No fraud category assigned'}</div>
+                <div class="fraud-tag-group">
+                    ${keywords.map(kw => `<span class="tag-pill">${kw}</span>`).join(' ') || '<span style="font-size:0.8rem;color:var(--text-tertiary);">None</span>'}
+                </div>
+            </div>
+
+            <div style="padding:12px;border-radius:var(--radius-sm);background:${isScam ? 'var(--status-danger-bg)' : 'var(--status-safe-bg)'};border:1px solid ${isScam ? 'var(--status-danger-border)' : 'var(--status-safe-border)'};font-size:0.82rem;">
+                ${isScam ? 'Advisory: High probability of financial extortion or credential theft. Discontinue call and verify independently.' : 'Advisory: Voice biometric profile matches natural speech. No fraud keywords detected.'}
+            </div>
+        `;
+
+        modal.style.display = 'flex';
+    }
+
+    function closeCallDetailModal() {
+        const modal = document.getElementById('call-modal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    /* ── Multilingual Sandbox Presets ── */
+    const SANDBOX_PRESETS = {
+        hi_otp: {
+            lang: 'hi',
+            text: 'नमस्ते सर, मैं स्टेट बैंक से मैनेजर बोल रहा हूँ। आपका बैंक खाता बंद हो गया है, तुरंत 6 डिजिट का ओटीपी बताओ वरना खाता हमेशा के लिए सस्पेंड हो जाएगा।'
+        },
+        hi_arrest: {
+            lang: 'hi',
+            text: 'आपका बेटा पुलिस स्टेशन में गिरफ्तार है, तुरंत पैसे ट्रांसफर करो वरना जेल भेज देंगे। किसी को मत बताना, तुरंत पैसे भेजो।'
+        },
+        en_bail: {
+            lang: 'en',
+            text: 'Mom, please listen to me, I was arrested after car accident and my phone battery is dying. You must wire $3000 to this bail bondsman immediately.'
+        },
+        en_lottery: {
+            lang: 'en',
+            text: 'Congratulations! You have won the $50,000 cash prize in our lucky draw. To claim your reward, buy an Apple gift card and share the code immediately.'
+        },
+        benign: {
+            lang: 'en',
+            text: 'Hey Dad, just calling to ask if we should meet for dinner at 7 tonight. Let me know when you are free.'
+        }
+    };
+
+    function fillSandbox(presetKey) {
+        const p = SANDBOX_PRESETS[presetKey];
+        if (!p) return;
+        document.getElementById('sandbox-input').value = p.text;
+        document.getElementById('sandbox-lang').value = p.lang;
+        runSandboxTest();
+    }
+
+    async function runSandboxTest() {
+        const text = document.getElementById('sandbox-input').value.trim();
+        const langChoice = document.getElementById('sandbox-lang').value;
+        const outBox = document.getElementById('sandbox-output');
+        if (!text) {
+            alert('Please enter a conversational text snippet.');
+            return;
+        }
+
+        outBox.style.display = 'block';
+        outBox.className = 'section-box skeleton';
+        outBox.innerText = 'Evaluating intent patterns...';
+
+        try {
+            const res = await fetch('/api/scam/analyze-text', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text, language: langChoice })
+            });
+            const data = await res.json();
+            outBox.className = 'section-box';
+
+            let kwHtml = '';
+            if (data.matched_keywords && data.matched_keywords.length > 0) {
+                kwHtml += data.matched_keywords.map(kw => `<span class="tag-pill">${kw}</span>`).join(' ');
+            }
+            if (data.urgency_markers && data.urgency_markers.length > 0) {
+                kwHtml += ' ' + data.urgency_markers.map(u => `<span class="tag-pill urgency">${u}</span>`).join(' ');
+            }
+
+            outBox.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <div style="font-weight:600;font-size:0.95rem;color:${data.is_scam ? 'var(--status-danger)' : 'var(--status-safe)'};">
+                        ${data.is_scam ? 'Fraud Intent Identified' : 'Safe Conversational Content'}
+                    </div>
+                    <span class="verdict-badge" style="background:${data.is_scam ? '#fee2e2' : '#dcfce7'};color:${data.is_scam ? 'var(--status-danger)' : 'var(--status-safe)'};">
+                        ${data.risk_level} (${data.scam_score}%)
+                    </span>
+                </div>
+                <div style="font-size:0.88rem;font-weight:600;margin-bottom:4px;">Category: ${data.primary_category || 'None'}</div>
+                <div style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:8px;line-height:1.4;">${data.explanation}</div>
+                <div style="margin-bottom:8px;">${kwHtml || '<span style="font-size:0.75rem;color:var(--text-tertiary);">No suspicious trigger words</span>'}</div>
+                <div style="font-size:0.8rem;padding:8px 10px;border-radius:var(--radius-sm);background:${data.is_scam ? 'var(--status-danger-bg)' : 'var(--status-safe-bg)'};color:${data.is_scam ? 'var(--status-danger)' : 'var(--status-safe)'};">
+                    ${data.recommended_action}
+                </div>
+            `;
+        } catch (e) {
+            outBox.className = 'section-box';
+            outBox.innerText = 'Evaluation error: ' + e.message;
+        }
+    }
     </script>
 </body>
 </html>

@@ -1,4 +1,5 @@
 import os
+from typing import Optional
 import io
 import time
 import numpy as np
@@ -11,6 +12,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from transformers import pipeline
 import librosa
 from faster_whisper import WhisperModel
+from scam_detector import analyze_transcript
+import db
 
 app = FastAPI(title="Voice Clone Shield")
 
@@ -29,10 +32,10 @@ print(f"Loading robust detection pipeline ({MODEL_ID})...")
 classifier = pipeline("audio-classification", model=MODEL_ID)
 print("Detector loaded successfully!")
 
-# Load faster-whisper model (quantized for high-speed CPU / Apple Silicon inference)
-print("Loading faster-whisper model (tiny.en)...")
-whisper_model = WhisperModel("tiny.en", device="cpu", compute_type="int8")
-print("faster-whisper loaded successfully!")
+# Load multilingual faster-whisper model (quantized for high-speed CPU / Apple Silicon inference)
+print("Loading multilingual faster-whisper model (tiny)...")
+whisper_model = WhisperModel("tiny", device="cpu", compute_type="int8")
+print("Multilingual faster-whisper loaded successfully!")
 
 SAFE_WORD = "SUPERNOVA-42"
 os.makedirs("debug_recordings", exist_ok=True)
@@ -162,9 +165,10 @@ def extract_librosa_forensics(audio_data, sr=16000):
         }
 
 def transcribe_audio_snippet(audio_data, sr=16000):
-    """Transcribe audio using faster-whisper and check for spoken emergency safewords."""
+    """Transcribe audio with multilingual auto-detection and check for spoken emergency safewords."""
     try:
-        segments, info = whisper_model.transcribe(audio_data, beam_size=1, language="en")
+        # Multilingual auto-detection (detects en, hi, bn, ta, te, es, fr, etc.)
+        segments, info = whisper_model.transcribe(audio_data, beam_size=1)
         text = " ".join([seg.text.strip() for seg in segments]).strip()
         
         # Check if the designated safe-word or keyword was spoken
@@ -190,9 +194,12 @@ def transcribe_audio_snippet(audio_data, sr=16000):
         }
 
 @app.post("/api/analyze")
-async def analyze_audio(file: UploadFile = File(...)):
+async def analyze_audio(file: Optional[UploadFile] = File(None), audio: Optional[UploadFile] = File(None)):
+    target_file = file or audio
+    if not target_file:
+        return JSONResponse(status_code=400, content={"error": "No audio file provided. Send form data with 'file' or 'audio'."})
     start_time = time.time()
-    contents = await file.read()
+    contents = await target_file.read()
     
     # Save a copy for debug inspection
     debug_path = os.path.join("debug_recordings", f"rec_{int(time.time()*1000)}.wav")
@@ -201,7 +208,7 @@ async def analyze_audio(file: UploadFile = File(...)):
         audio_data, sr = process_audio_buffer(contents)
         sf.write(debug_path, audio_data, sr)
     except Exception as e:
-        print(f"Decode error on {file.filename}: {e}")
+        print(f"Decode error on {target_file.filename}: {e}")
         return JSONResponse(status_code=400, content={"error": f"Audio processing error: {str(e)}"})
     
     duration = round(len(audio_data) / sr, 2)
@@ -221,17 +228,57 @@ async def analyze_audio(file: UploadFile = File(...)):
     # 2. Librosa Acoustic Forensics (MFCC, Centroid, Flatness, F0 Pitch)
     forensics = extract_librosa_forensics(sample_slice, sr)
     
-    # 3. faster-whisper Speech-to-Text & Spoken Safeword Intercept
+    # 3. Multilingual faster-whisper Speech-to-Text & Spoken Safeword Intercept
     speech = transcribe_audio_snippet(sample_slice, sr)
     
+    # 4. NLP Multilingual Scam & Extortion Intent Analysis
+    scam_analysis = analyze_transcript(speech["transcript"], language=speech.get("language", "en"))
+    
+    # 5. Composite Security Assessment
+    if is_fake and scam_analysis["is_scam"]:
+        composite_verdict = "CRITICAL_AI_SCAM"
+    elif is_fake:
+        composite_verdict = "DEEPFAKE_VOICE"
+    elif scam_analysis["is_scam"]:
+        composite_verdict = "HUMAN_FRAUD_CALL"
+    else:
+        composite_verdict = "AUTHENTIC_SAFE"
+
+    # 6. Persist to SQLite Audit Log
+    call_id = None
+    try:
+        call_id = db.log_call(
+            verdict="DEEPFAKE_CLONE" if is_fake else "AUTHENTIC_HUMAN",
+            composite_verdict=composite_verdict,
+            threat_score=round(fake_score * 100, 1),
+            scam_score=scam_analysis["scam_score"],
+            risk_level=scam_analysis["risk_level"],
+            primary_category=scam_analysis["primary_category"],
+            detected_language=speech.get("language", "en"),
+            transcript=speech["transcript"],
+            matched_keywords=scam_analysis.get("matched_keywords", []),
+            urgency_markers=scam_analysis.get("urgency_markers", []),
+            duration=duration,
+            acoustic_data={
+                "pitch_f0_hz": forensics["pitch_f0_hz"],
+                "spectral_centroid_hz": forensics["spectral_centroid_hz"],
+                "spectral_flatness": forensics["spectral_flatness"]
+            },
+            caller_label=f"Call Scan ({target_file.filename or 'Live Audio'})"
+        )
+    except Exception as dbe:
+        print(f"DB logging warning: {dbe}")
+
     hf_cutoff = float(np.mean(np.abs(np.diff(sample_slice))))
     latency_ms = round((time.time() - start_time) * 1000)
 
-    print(f"Verdict: {'DEEPFAKE' if is_fake else 'AUTHENTIC'} | Conf: {confidence*100:.1f}% | Transcript: {speech['transcript']}")
+    print(f"Composite Verdict: {composite_verdict} | Scam Score: {scam_analysis['scam_score']}% | Fake Score: {fake_score*100:.1f}%")
 
     return {
         "status": "success",
+        "call_id": call_id,
         "verdict": "DEEPFAKE_CLONE" if is_fake else "AUTHENTIC_HUMAN",
+        "composite_verdict": composite_verdict,
         "is_fake": is_fake,
         "threat_score": round(fake_score * 100, 1),
         "confidence": round(confidence * 100, 1),
@@ -239,6 +286,7 @@ async def analyze_audio(file: UploadFile = File(...)):
         "latency_ms": latency_ms,
         "transcript": speech["transcript"],
         "speech_analysis": speech,
+        "scam_analysis": scam_analysis,
         "acoustic_forensics": {
             "spectral_centroid_hz": forensics["spectral_centroid_hz"],
             "spectral_flatness": forensics["spectral_flatness"],
@@ -254,6 +302,29 @@ async def analyze_audio(file: UploadFile = File(...)):
         },
         "spectrogram_preview": forensics["spectrogram_preview"]
     }
+
+@app.get("/api/scam/calls")
+async def get_scam_calls(limit: int = 50, flagged_only: bool = False):
+    """Retrieve logged call records from SQLite audit log."""
+    return db.get_recent_calls(limit=limit, filter_flagged_only=flagged_only)
+
+@app.get("/api/scam/analytics")
+async def get_scam_analytics():
+    """Retrieve aggregate statistics on scanned calls, deepfakes, and fraud categories."""
+    return db.get_analytics()
+
+@app.post("/api/scam/clear-history")
+async def clear_scam_history():
+    """Clear call audit log."""
+    db.clear_all_calls()
+    return {"status": "cleared", "message": "Call audit logs wiped."}
+
+@app.post("/api/scam/analyze-text")
+async def analyze_text_endpoint(payload: dict):
+    """Endpoint for direct NLP text fraud analysis across languages."""
+    text = payload.get("text", "")
+    language = payload.get("language", "en")
+    return analyze_transcript(text, language=language)
 
 @app.post("/api/verify-safeword")
 async def verify_safeword(answer: str = Form(...)):
@@ -277,6 +348,16 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 @app.get("/", response_class=HTMLResponse)
 async def serve_index():
     with open("static/index.html", "r") as f:
+        return f.read()
+
+@app.get("/privacy", response_class=HTMLResponse)
+async def serve_privacy():
+    with open("static/privacy.html", "r") as f:
+        return f.read()
+
+@app.get("/terms", response_class=HTMLResponse)
+async def serve_terms():
+    with open("static/terms.html", "r") as f:
         return f.read()
 
 if __name__ == "__main__":

@@ -22,7 +22,8 @@ RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r requirements.txt
 
 # Pre-download the deepfake model during build for instant cold start
-RUN python3 -c "from transformers import pipeline; pipeline('audio-classification', model='mo-thecreator/Deepfake-audio-detection')"
+RUN python3 -c "from transformers import pipeline; pipeline('audio-classification', model='mo-thecreator/Deepfake-audio-detection')" && \
+    python3 -c "from faster_whisper import WhisperModel; WhisperModel('tiny', device='cpu', compute_type='int8')"
 
 # Copy application source code
 COPY --chown=user . $HOME/app
