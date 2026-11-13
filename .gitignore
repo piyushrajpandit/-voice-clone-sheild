@@ -7,3 +7,7 @@ samples/*.wav
 
 calls.db
 *.db
+.env
+.env.*
+!.env.example
+server.log
